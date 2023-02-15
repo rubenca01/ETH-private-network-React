@@ -6,7 +6,6 @@ import { Footer } from './Footer'
 export function Home() {
     return <div>
         <Header/>
-        Home - text to delete later on
         <Outlet/>
         <Footer/>
     </div>
