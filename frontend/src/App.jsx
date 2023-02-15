@@ -8,6 +8,7 @@ import { Quienes } from './Components/Quienes'
 import { Privacidad } from './Components/Privacidad'
 import { Terminos } from './Components/Terminos'
 import { Welcome } from './Components/Welcome'
+import { RedDetail } from './Components/RedDetail'
 
 const queryClient = new QueryClient()  
 
@@ -22,6 +23,7 @@ export function App() {
           <Route path="/quienes" element ={<Quienes/>}/>
           <Route path="/Privacidad" element ={<Privacidad/>}/>
           <Route path="/Terminos" element ={<Terminos/>}/>
+          <Route path="/red/:numero" element={<RedDetail/>}/>
 
         </Route>
       </Routes>

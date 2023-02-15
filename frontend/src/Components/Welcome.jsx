@@ -1,5 +1,7 @@
 import ethLogo from '../assets/eth.png'
 
+import { ListaRed } from './ListaRed'
+
 export function Welcome() {
     return <div className="d-flex justify-content-center">
         <div className="d-flex flex-column w-50">
@@ -10,6 +12,8 @@ export function Welcome() {
         
             <a className="btn btn-outline-secondary m-1" href="/Privacidad" role="button">Crear red</a>
             <a className="btn btn-outline-secondary m-1" href="/Privacidad" role="button">Consultar red</a>
+            <div className='d-flex justify-content-center'><ListaRed/></div>
+            
         </div>
     </div>
 }
