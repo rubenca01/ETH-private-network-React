@@ -1,24 +1,11 @@
 // https://expressjs.com/
 const express = require("express")
+const fs = require("fs")
 const router = express.Router()
 const bodyParser = require('body-parser')
-// https://expressjs.com/en/resources/middleware/cors.html
-//const cors = require("cors") 
-// https://expressjs.com/en/resources/middleware/morgan.html
-//const morgan = require("morgan") 
-//const app = express()
 const myDockerHelper = require("./docker-helpers")
 
 module.exports = router
-
-//const { Router } = require("express")
-//app.use(bodyParser.json())
-//app.use(bodyParser.urlencoded({ extended: false }))
-//const port = 3000
-
-/*app.listen(port, () => {
-  console.log(`listening on port ${port}`)
-})*/
 
 //pulling ethereum/client-go image form Docker Hub locally
 myDockerHelper.pullImage('ethereum/client-go:latest',{}).then((v)=>{
@@ -67,7 +54,7 @@ function generateParameter(network, node) {
 
 
 //Lets creates the network
-router.post('/create', (req, res) => {
+router.post('/create', async (req, res) => {
   try {
     const NUMERO_NETWORK = parseInt(req.body.network)
     const NUMERO_NODO = 1
@@ -80,12 +67,35 @@ router.post('/create', (req, res) => {
     deleteIfExists(NETWORK_DIR)
     createIfNotExists(NETWORK_DIR)
     createIfNotExists(DIR_NODE)
-
-
     
-    
-    res.send("Network created")
+    const result = { network_id: 9999 }
+
+    res.json(result)
   } catch (error) {
-    res.send({error})
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  }  
+})
+
+//Lets list all networks
+router.get('/list', async (req, res) => {
+  try {
+
+    const networks = [];
+    const cuentas = { "alloc": {
+      "704765a908962e25626f2bea8cdf96c84dedaa0b": {
+        "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
+      }
+    }}
+    networks.push({ number: "NETWORK1", chainid: 'XXXXXXX', cuentas: cuentas });
+    networks.push({ number: "NETWORK2", chainid: 'YYYYYYY', cuentas: cuentas });
+    networks.push({ number: "NETWORK2", chainid: 'ZZZZZZZ', cuentas: cuentas });
+        
+    const result = { networks }
+
+    res.json(result)
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
   }  
 })
