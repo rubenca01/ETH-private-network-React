@@ -5,7 +5,7 @@ import logogithub from '../assets/logogithub.png'
 import logoinsta from '../assets/logoinsta.png'
 
 export function Footer() {
-    return  <div className="d-flex justify-content-around fixed-bottom mt-4 bg-secondary">
+    return  <div className="d-flex justify-content-around mt-4 fixed-bottom bg-secondary">
         <Link to="/quienes" className="text-decoration-none text-light" target="_blank">Quienes somos?</Link>
         <Link to="/privacidad" className="text-decoration-none text-light" target="_blank">Privacidad</Link>
         <Link to="/terminos" className="text-decoration-none text-light" target="_blank">Terminos & condiciones</Link>

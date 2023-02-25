@@ -4,9 +4,9 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 
 export function Home() {
-    return <div>
-        <Header/>
-        <Outlet/>
-        <Footer/>
+    return <div className='d-flex flex-column'>
+        <div><Header/></div>
+        <div className='pb-5'><Outlet/></div>
+        <div><Footer/></div>
     </div>
 }

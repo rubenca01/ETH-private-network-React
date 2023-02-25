@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, createContext } from 'react'
 import reactLogo from './assets/react.svg'
 import {Route, Routes, Outlet, BrowserRouter} from 'react-router-dom'
 import {QueryClient, QueryClientProvider} from 'react-query'
@@ -11,24 +11,27 @@ import { Welcome } from './Components/Welcome'
 import { RedDetail } from './Components/RedDetail'
 
 const queryClient = new QueryClient()  
+export const Context = createContext(null)
 
 export function App() {
+  const [estado, setEstado]= useState(null)
+  return <Context.Provider value={[estado, setEstado]}>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element ={<Home/>}>
+            <Route path="*" element ={<Welcome/>}/>
+            <Route index element ={<Welcome/>}/>
+            <Route path="/quienes" element ={<Quienes/>}/>
+            <Route path="/Privacidad" element ={<Privacidad/>}/>
+            <Route path="/Terminos" element ={<Terminos/>}/>
+            <Route path="/red/:numero" element={<RedDetail/>}/>
 
-  return <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element ={<Home/>}>
-          <Route path="*" element ={<Welcome/>}/>
-          <Route index element ={<Welcome/>}/>
-          <Route path="/quienes" element ={<Quienes/>}/>
-          <Route path="/Privacidad" element ={<Privacidad/>}/>
-          <Route path="/Terminos" element ={<Terminos/>}/>
-          <Route path="/red/:numero" element={<RedDetail/>}/>
-
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  </QueryClientProvider>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  </Context.Provider>
     
 }
 
