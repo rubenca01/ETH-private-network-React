@@ -1,6 +1,7 @@
 //Front: Formulario para crear la red que nos pida: NUMERO DE RED. Creará la red con el nodo1
 
 import React, { useState } from 'react';
+import { useQuery } from 'react-query';
 
 export function NuevaRed() {
     const [numRed, setNumRed] = useState('333444');
@@ -12,9 +13,9 @@ export function NuevaRed() {
         try {
             const resp = await fetch(`http://localhost:3000/network/create/${numRed}`);
             const data = await resp.json();
-            if (data.network_ID) {
-                setNetworkID (JSON.stringify(data.network_ID)); 
-                setNodeID (JSON.stringify(data.node_ID));
+            if (data.network_id) {
+                setNetworkID (JSON.stringify(data.network_id)); 
+                //setNodeID (JSON.stringify(data.node_ID));
                 setError (null); 
             }
             if (data.error) {
@@ -38,7 +39,8 @@ export function NuevaRed() {
             <div className="text-center">
                 <button type="submit" className="btn btn-primary my-4" onClick={() => crear()}>Crear Red {numRed}</button>
             </div>
-            {network_ID && <div className="alert alert-info m-3">Red y nodo creados: {network_ID}, {node_ID}</div>}
+        
+            {network_ID && <div className="alert alert-info m-3">Red y nodo creados: {network_ID}</div>}
             {error && <div className="alert alert-danger mt-3">Error: {error}</div>}
         </div>
     );
