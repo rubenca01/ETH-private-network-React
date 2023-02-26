@@ -9,6 +9,7 @@ import { Privacidad } from './Components/Privacidad'
 import { Terminos } from './Components/Terminos'
 import { Welcome } from './Components/Welcome'
 import { RedDetail } from './Components/RedDetail'
+import { NuevaRed } from './Components/NuevaRed'
 
 const queryClient = new QueryClient()  
 export const Context = createContext(null)
@@ -26,6 +27,7 @@ export function App() {
             <Route path="/Privacidad" element ={<Privacidad/>}/>
             <Route path="/Terminos" element ={<Terminos/>}/>
             <Route path="/red/:numero" element={<RedDetail/>}/>
+            <Route path="/Nuevared" element={<NuevaRed/>}/>
 
           </Route>
         </Routes>
