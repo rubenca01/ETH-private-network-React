@@ -255,12 +255,16 @@ function createContainerBootNodeEnode(imageId, networkid){
     docker.createContainer({
       Image: imageId,
       name: 'bootnode_'+'enode'+'_network_'+networkid,
-      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3"],
+      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":8010"],
       'Volumes': {
         '/opt/bootnode': {}
       },
       'HostConfig': {
+        'PortBindings' : {"8010/tcp" : [{"HostPort": "8010"}]},
         'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`]
+      },
+      ExposedPorts:{
+        "8010/tcp":{}
       },
       User:""
     },(err,stream)=>{
