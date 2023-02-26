@@ -101,10 +101,11 @@ function generateParameter(network, node) {
     const IPCPATH = `\\\\.\\pipe\\${NETWORK_CHAINID}-${NODO}.ipc`
     const PORT = 30404 + NUMERO_NODO + NUMERO_NETWORK * 20
     const AUTHRPC_PORT = 9553 + NUMERO_NODO + NUMERO_NETWORK * 20
+    const BOOTNODE_PORT = 8710 + NUMERO_NODO + NUMERO_NETWORK * 20
 
     const params = {
       NUMERO_NETWORK, NUMERO_NODO, NODO, NETWORK_DIR, NETWORK_CHAINID, HTTP_PORT,
-      DIR_NODE, IPCPATH, PORT, AUTHRPC_PORT
+      DIR_NODE, IPCPATH, PORT, AUTHRPC_PORT, BOOTNODE_PORT
     }
     
     if (params == null){
@@ -124,7 +125,7 @@ router.get('/create/:numRed', (req, res) => {
     //const NUMERO_CUENTA = req.body.cuenta
     const parametros = await generateParameter(NUMERO_NETWORK, NUMERO_NODO)
 
-    const { NETWORK_DIR, DIR_NODE, NETWORK_CHAINID, AUTHRPC_PORT, HTTP_PORT, PORT, IPCPATH } = parametros
+    const { NETWORK_DIR, DIR_NODE, NETWORK_CHAINID, AUTHRPC_PORT, HTTP_PORT, PORT, IPCPATH, BOOTNODE_PORT } = parametros
 
     console.log("parameters " + JSON.stringify(parametros))
 
@@ -137,7 +138,7 @@ router.get('/create/:numRed', (req, res) => {
     await myDockerHelper.createContainerBootNodeKey('ethereum/client-go:alltools-v1.8.12', NUMERO_NETWORK)
     await myDockerHelper.startContainer(`bootnode_genkey_network_${NUMERO_NETWORK}`)
 
-    await myDockerHelper.createContainerBootNodeEnode('ethereum/client-go:alltools-v1.8.12', NUMERO_NETWORK)
+    await myDockerHelper.createContainerBootNodeEnode('ethereum/client-go:alltools-v1.8.12', NUMERO_NETWORK, BOOTNODE_PORT)
     await myDockerHelper.startContainer(`bootnode_enode_network_${NUMERO_NETWORK}`)
 
     const enodeAddress = await myDockerHelper.execShellCommand(`sh ./docker_scripts/getbootnodeurl.sh bootnode_enode_network_${NUMERO_NETWORK}`)
