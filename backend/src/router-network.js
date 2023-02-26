@@ -4,6 +4,7 @@ const fs = require("fs")
 const router = express.Router()
 const bodyParser = require('body-parser')
 const myDockerHelper = require("./docker-helpers")
+const listar = require('./list')
 const myUtils = require("./utils")
 const {resolve} = require('path')
 const absolutePath = resolve('');
@@ -52,7 +53,7 @@ function createAccount(DIR_NODE, password, networkid ,callback) {
         console.log("fichero " + x)
         resolve(JSON.parse(x).address)
       })
-    },10000)
+    },5000)
   })}
   return new Promise(async (resolve, reject) => {
     myUtils.writeFile(`${DIR_NODE}/pwd.txt`, password)
@@ -115,10 +116,10 @@ function generateParameter(network, node) {
 
 
 //Lets creates the network
-router.post('/create', (req, res) => {
+router.get('/create/:numRed', (req, res) => {
   var result
   async function doit() {try {
-    const NUMERO_NETWORK = parseInt(req.body.network)
+    const NUMERO_NETWORK = parseInt(req.params.numRed)
     const NUMERO_NODO = 1
     //const NUMERO_CUENTA = req.body.cuenta
     const parametros = await generateParameter(NUMERO_NETWORK, NUMERO_NODO)
@@ -143,7 +144,7 @@ router.post('/create', (req, res) => {
     console.log(`enode for bootnode_enode_network_${NUMERO_NETWORK} is ${enodeAddress}`)
    
             
-    const aa = await createAccount(DIR_NODE,req.body.password,NUMERO_NETWORK)
+    const aa = await createAccount(DIR_NODE,"1234",NUMERO_NETWORK)
     .then(resultado => {
         console.log("here we go " + resultado)
         const CUENTAS_ALLOC = [
@@ -179,7 +180,7 @@ doit()
 })
 
 //Lets list all networks
-router.get('/list', async (req, res) => {
+/* router.get('/list', async (req, res) => {
   try {
 
     const networks = [];
@@ -193,6 +194,29 @@ router.get('/list', async (req, res) => {
     networks.push({ number: "NETWORK2", chainid: 'ZZZZZZZ', cuentas: cuentas });
         
     const result = { networks }
+
+    res.json(result)
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  }  
+}) */
+
+router.get('/list', async (req, res) => {
+  try {
+    const result = {networks: await listar.listNetwork()}
+
+    res.json(result)
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  }  
+})
+
+
+router.get('/node/list/:networkid', async (req, res) => {
+  try {
+    const result = {nodos: await listar.listNodes(req.params.networkid, "8545")}
 
     res.json(result)
   } catch (error) {

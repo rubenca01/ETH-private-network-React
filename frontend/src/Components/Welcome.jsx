@@ -10,7 +10,7 @@ export function Welcome() {
             </div>
             <h2 className="text-center">Bienvenido a Build Private Ethereum Networks</h2>
         
-            <a className="btn btn-outline-secondary m-1" href="/Privacidad" role="button">Crear red</a>
+            <a className="btn btn-outline-secondary m-1" href="/Nuevared" role="button">Crear red</a>
             <a className="btn btn-outline-secondary m-1" href="/Privacidad" role="button">Consultar red</a>
             <div className='d-flex justify-content-center'><ListaRed/></div>
             

@@ -10,7 +10,7 @@ export function NuevaRed() {
 
     async function crear() {
         try {
-            const resp = await fetch(`http://localhost:3333/network/create/${numRed}/1`);
+            const resp = await fetch(`http://localhost:3000/network/create/${numRed}`);
             const data = await resp.json();
             if (data.network_ID) {
                 setNetworkID (JSON.stringify(data.network_ID)); 
