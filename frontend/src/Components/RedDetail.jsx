@@ -4,9 +4,9 @@ import { ListaNodo } from "./ListaNodo"
 import { Context } from "../App"
 
 export function RedDetail() {
-    const [estado, setEstado]= useContext(Context)
+    //const [estado, setEstado]= useContext(Context)
     const params=useParams()
-    setEstado(params.numero)
+    //setEstado(params.numero)
     console.log(params)
     return <div>
         {`Aqui esta el detalle de la red ${params.numero}`}
