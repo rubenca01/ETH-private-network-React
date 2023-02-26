@@ -5,6 +5,8 @@ const router = express.Router()
 const bodyParser = require('body-parser')
 const myDockerHelper = require("./docker-helpers")
 const myUtils = require("./utils")
+const {resolve} = require('path')
+const absolutePath = resolve('');
 
 var Docker = require('dockerode');
 const { error } = require("console")
@@ -12,9 +14,7 @@ var docker = new Docker({socketPath: '/var/run/docker.sock'});
 
 module.exports = router
 
-//const PASSWORD = "123456"
 const BALANCE = "0x200000000000000000000000000000000000000000000000000000000000000"
-//const MICUENTA = "704765a908962e25626f2bea8cdf96c84dedaa0b"
 
 //pulling ethereum/client-go image form Docker Hub locally
 myDockerHelper.pullImage('ethereum/client-go:stable',{}).then((v)=>{
@@ -52,18 +52,10 @@ function createAccount(DIR_NODE, password, networkid ,callback) {
         console.log("fichero " + x)
         resolve(JSON.parse(x).address)
       })
-/*       .then(x => {
-        console.log("json: ", x)
-        return x.address
-      })
-      .then(CUENTA => {
-        console.log("resolve de cueanta Promise: ", CUENTA)
-        resolve(CUENTA)
-      }) */
     },10000)
   })}
   return new Promise(async (resolve, reject) => {
-    myUtils.writeFile(`${DIR_NODE}/pwd`, password)
+    myUtils.writeFile(`${DIR_NODE}/pwd.txt`, password)
     .then(await myDockerHelper.createContainerNode('ethereum/client-go:stable', `node_account_${networkid}`, DIR_NODE, networkid))
     .then(await myDockerHelper.startContainer(`node_account_${networkid}`))
     .then(async () => await cuentaPromise())
@@ -72,82 +64,13 @@ function createAccount(DIR_NODE, password, networkid ,callback) {
       resolve(result) 
 
     })
-  })
-  
-  /*console.log("dir_NODE " +DIR_NODE )
-  //var listFS
-
-  await myUtils.writeFile(`${DIR_NODE}/pwd`, password)    
-  await myDockerHelper.createContainerNode('ethereum/client-go:stable', `node_account_${networkid}`, DIR_NODE, networkid)
-  await myDockerHelper.startContainer(`node_account_${networkid}`)
-
-  
-  async function readKeystore(){
-      await myDockerHelper.execShellCommand(`chmod 777 -R ${DIR_NODE}/keystore`)
-      const listFS = await myUtils.readdirec(`${DIR_NODE}/keystore`)
-      console.log("listFS " + listFS)
-      const account = JSON.parse(fs.readFileSync(`${DIR_NODE}/keystore/${listFS[0]}`).toString()).address
-      console.log("account " + account)
-      return account
-  }
-  const acc = setTimeout(function() {
-    readKeystore()
-  },10000)
-  
-  console.log("acc " + acc)*/
-
-  
-
-  /*
-async function getCuenta() {
-  return await cuentaPromise
-}
-const CUENTA = await getCuenta()
-.then(console.log(CUENTA))
-return CUENTA*/
-
-
-
-
-
-
-    //console.log("listFS " + listFS)
-    //const CUENTA = JSON.parse(fs.readFileSync(`${DIR_NODE}/keystore/${listFS[0]}`).toString()).address
-    //console.log(`NODE ADDRESS ${CUENTA} `)
-  
-  
-  
-  
-  
-  
-  
- 
-  
-  
-  //promise.then((data)=>{
-    // pillamos el address que hemos creado
-  /*setTimeout(function() {
-    try{
-      const lista = fs.readdirSync(`${DIR_NODE}/keystore`)
-      console.log(lista)
-      const CUENTA = JSON.parse(fs.readFileSync(`${DIR_NODE}/keystore/${lista[0]}`).toString()).address
-      console.log(`NODE ADDRESS ${CUENTA} `)
-      callback(CUENTA);
-    } catch(ex){
-      console.log(ex)
-      //return
-    }
-  }, 3000); //giving some time in order to creates node account by Docker*/
-  
-  //TODO, remove container 
-
-  
+  }) 
 }
 
 function generateGenesis(NETWORK_CHAINID, CUENTA, BALANCE, CUENTAS_ALLOC, NETWORK_DIR) {
   const timestamp = Math.round(((new Date()).getTime() / 1000)).toString(16)
   // leemos la plantilla del genesis
-  let genesis = JSON.parse(fs.readFileSync('/home/rcabrera/codecrypto/ETH-private-network-React/backend/genesisbase.json').toString())
+  let genesis = JSON.parse(fs.readFileSync(`${absolutePath}/genesisbase.json`).toString())
 
   console.log(`myGenesis ${genesis}`)
 
@@ -168,8 +91,8 @@ function generateParameter(network, node) {
   return new Promise((resolve, reject)=>{
     const NUMERO_NETWORK = parseInt(network)
     const NUMERO_NODO = parseInt(node)
-    const NODO = `nodo${NUMERO_NODO}`
-    const NETWORK_DIR = `ETH/eth${NUMERO_NETWORK}`
+    const NODO = `node${NUMERO_NODO}`
+    const NETWORK_DIR = `Ethereum/network${NUMERO_NETWORK}`
     const NETWORK_CHAINID = 333444 + NUMERO_NETWORK
 
     const HTTP_PORT = 9545 + NUMERO_NODO + NUMERO_NETWORK * 20
@@ -204,8 +127,8 @@ router.post('/create', (req, res) => {
 
     console.log("parameters " + JSON.stringify(parametros))
 
-    createIfNotExists("ETH")
-    deleteIfExists(NETWORK_DIR)
+    createIfNotExists("Ethereum")
+    //deleteIfExists(NETWORK_DIR)
     createIfNotExists(NETWORK_DIR)
     createIfNotExists(DIR_NODE)
     
@@ -229,11 +152,20 @@ router.post('/create', (req, res) => {
         generateGenesis(NETWORK_CHAINID, resultado, BALANCE, CUENTAS_ALLOC, NETWORK_DIR)
         
     }).then(
-      //TODO : init geth with parameters
+      await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_network_${NUMERO_NETWORK}`, DIR_NODE, NUMERO_NETWORK) 
     ).then(
-      //TODO : Start container
+      async function startNode() {
+        console.log(`initializing node node_network_${NUMERO_NETWORK} data`)
+        myDockerHelper.startContainer(`node_network_${NUMERO_NETWORK}`)
+      }
+    ).then(
+     
+        //setTimeout(async () => {
+          //console.log(`up to my ears with this.... but interesting dude, just playing......`)
+          //await myDockerHelper.execShellCommand(`chmod 777 -R ${DIR_NODE}/get`)
+        //},30000)
+      
     )
-    
     
     result = { network_id: NUMERO_NETWORK }
   } catch (error) {

@@ -5,8 +5,6 @@ const {resolve} = require('path')
 
 const absolutePath = resolve('');
 
-//var stream = require('stream');
-
 const { exec } = require('child_process');
 
 function pullImage(imageId){
@@ -22,6 +20,74 @@ function pullImage(imageId){
         })
     })
 }
+
+function createNodeNetwork(imageId, accountName, data_dir, networkid){
+  return new Promise((resolve, reject)=>{
+    docker.createContainer({
+      Image: imageId,
+      name: accountName,
+      Cmd: ["--datadir", `/codecrypto/network${networkid}/node1`, "init", `/codecrypto/network${networkid}/genesis.json`],
+      'Volumes': {
+        '/codecrypto': {}
+      },
+      'HostConfig': {
+        'Binds': [`${absolutePath}/Ethereum/network${networkid}:/codecrypto/network${networkid}`]
+      },
+      User:"`$(id -u $UID):$(id -g $UID)`"
+    },(err,stream)=>{
+      if(err){
+        console.error(`Docker error when creating node initializarion on networkid:${networkid} ` + err);
+        reject(err);
+      }else {
+        console.log(`Docker node initialization created on network:${networkid}`);
+        resolve(stream);
+      }
+    })
+  })
+}
+
+//docker run -it -u $(id -u $UID):$(id -g $UID) 
+// -p 8081:8081 -p 30001:30001 
+// -v /home/ruben/codecrypto/projects/ETH-private-NET/backend/src/Ethereum:/codecrypto ethereum/client-go 
+// --networkid "1" 
+// --ipcpath "\\.\pipe\geth1.ipc" 
+// --datadir /codecrypto/network1/node1 
+// --syncmode full 
+// --http 
+// --http.api admin,eth,miner,net,txpool,personal 
+// --http.addr 0.0.0.0 
+// --http.port 8541  
+// --http.corsdomain "*" 
+// --allow-insecure-unlock 
+// --unlock 0x45ffb6e1ad014bdb230dae7735085e4f09adae9c 
+// --password /codecrypto/network1/node1/pwd.txt 
+// --mine 
+// --port 30031 
+// --bootnodes "enode://07b81ea8d5fa868348b8bd0e724dc5ec6e911ebbc773d815ab5c22bfc81f394a3fe942fe5b1409a431b27ba705171a066b1d63b0e8cb2ac5e6dfb57c09b78cb1@172.17.0.3:30301"
+
+function launchNode(imageId, accountName, networkid, account, enode){
+  return new Promise((resolve, reject)=>{
+    docker.run(imageId,[], undefined, {
+      "name": accountName,
+      'Volumes': {
+        '/codecrypto': {}
+      },
+      'HostConfig': {
+        'Binds': [`${absolutePath}/Ethereum/network${networkid}:/codecrypto/network${networkid}`]
+      },
+      User:"`$(id -u $UID):$(id -g $UID)`"
+    },(err,stream)=>{
+      if(err){
+        console.error(`Error when launching Blockchain node on networkid:${networkid} ` + err);
+        reject(err);
+      }else {
+        console.log(`******************** Blockchain launched on network:${networkid} **************************`);
+        resolve(stream);
+      }
+    })
+  })
+}
+
 
 function createNetwork(imageId, networkID){
     return new Promise((resolve, reject)=>{
@@ -44,44 +110,19 @@ function createNetwork(imageId, networkID){
     })    
 }
 
-function createETHAccount(imageId, accountName, data_dir){
-  return new Promise((resolve, reject)=>{
-      const pwd = fs.readFileSync(`${data_dir}/pwd`)
-      console.log(`dir node content password for node ${pwd}`)
-      docker.run(imageId, ["--password", '/root/pwd', "account", "new"], process.stdout, {
-          "name": accountName,
-          'Volumes': {
-            '/root': {}
-          },
-          'Binds': ['/${data_dir}:/root:rw']
-        }, function(err, data, container) {
-          if (err){
-            return console.error(err);
-          }
-          console.log(data.StatusCode);
-        });
-  })    
-}
-
-function handleError (err) {
-  if (err) {
-    console.log(err);
-  }
-}
-
 function a(imageId, accountName, data_dir, networkid){
   //return new Promise((resolve, reject)=>{
-      const pwd = fs.readFileSync(`${data_dir}/pwd`)
+      const pwd = fs.readFileSync(`${data_dir}/pwd.txt`)
       
       docker.createContainer({
         Image: imageId,
         name: accountName,
-        Cmd: ["--password", "/root/pwd", "account", "new", "--datadir", "/root"],
+        Cmd: ["--datadir", "/codecrypto", "account", "new", "--password", "/codecrypto/pwd.txt"],
         'Volumes': {
-          '/root': {}
+          '/codecrypto': {}
         },
         'HostConfig': {
-          'Binds': [`${absolutePath}/ETH/eth${networkid}/nodo1:/root:rw`]
+          'Binds': [`${absolutePath}/Ethereum/network${networkid}:/codecrypto:rw`]
         },
         User:'1000:1000'
       }, function(err, container) {
@@ -102,46 +143,6 @@ function a(imageId, accountName, data_dir, networkid){
   //})    
 }
 
-/*function generateBootNodeBootKey(imageId, networkid){
-  return new Promise((resolve, reject)=>{
-      docker.createContainer({
-        Image: imageId,
-        name: 'bootnode_'+'genkey'+'_'+'network'+'_'+networkid,
-        Cmd: ["bootnode", "--genkey", "/opt/bootnode/boot.key"],
-        'Volumes': {
-          '/opt/bootnode': {}
-        },
-        'HostConfig': {
-          'Binds': [`${absolutePath}/ETH/network${networkid}/:/opt/bootnode`]
-        },
-        //User:'1000:1000'
-      }, function(err, container) {
-        container.attach({
-          stream: true,
-          stdout: true,
-          stderr: true,
-          tty: true
-        }, function(err, stream) {
-          stream.pipe(process.stdout);
-          container.start(function(err, data) {
-            //console.log(data);
-          });
-          
-          if(err){
-            console.error(`Docker error when creating bootkey on networkid:${networkid}` + err);
-            reject(err)
-          }else {
-              console.log(`Docker bootkey created on network:${networkid}`);
-              resolve(container);
-          }
-
-        });
-
-      });
-      
-  });
-}*/
-
 
 function generateBootNodeBootKey(imageId, networkid){
   return new Promise((resolve, reject)=>{
@@ -153,7 +154,7 @@ function generateBootNodeBootKey(imageId, networkid){
           '/opt/bootnode': {}
         },
         'HostConfig': {
-          'Binds': [`${absolutePath}/ETH/network${networkid}/:/opt/bootnode`]
+          'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`]
         },
         //User:'1000:1000'
       },(err,stream)=>{
@@ -198,58 +199,17 @@ function generateBootNodeBootKey(imageId, networkid){
 }
 
 
-
-/*function generateBootNodeBootKey(imageId, networkid){
-  return new Promise((resolve, reject)=>{
-      docker.createContainer({
-        Image: imageId,
-        name: 'bootnode_'+'genkey'+'_'+'network'+'_'+networkid,
-        Cmd: ["bootnode", "--genkey", "/opt/bootnode/boot.key"],
-        'Volumes': {
-          '/opt/bootnode': {}
-        },
-        'HostConfig': {
-          'Binds': [`${absolutePath}/ETH/network${networkid}/:/opt/bootnode`]
-        },
-        //User:'1000:1000'
-      }, function(err, container) {
-        container.attach({
-          stream: true,
-          stdout: true,
-          stderr: true,
-          tty: true
-        }, function(err, stream) {
-          stream.pipe(process.stdout);
-          container.start(function(err, data) {
-            //console.log(data);
-          });
-          
-          if(err){
-            console.error(`Docker error when creating bootkey on networkid:${networkid}` + err);
-            reject(err)
-          }else {
-              console.log(`Docker bootkey created on network:${networkid}`);
-              resolve(container);
-          }
-
-        });
-
-      });
-      
-  });
-}*/
-
 function createContainerNode(imageId, accountName, data_dir, networkid){
   return new Promise((resolve, reject)=>{
     docker.createContainer({
       Image: imageId,
       name: accountName,
-      Cmd: ["--password", "/root/pwd", "account", "new", "--datadir", "/root"],
+      Cmd: ["--password", "/codecrypto/pwd.txt", "account", "new", "--datadir", "/codecrypto"],
       'Volumes': {
-        '/root': {}
+        '/codecrypto': {}
       },
       'HostConfig': {
-        'Binds': [`${absolutePath}/ETH/eth${networkid}/nodo1:/root:rw`]
+        'Binds': [`${absolutePath}/Ethereum/network${networkid}/node1:/codecrypto:rw`]
       },
       User:'1000:1000'
     },(err,stream)=>{
@@ -274,7 +234,7 @@ function createContainerBootNodeKey(imageId, networkid){
         '/opt/bootnode': {}
       },
       'HostConfig': {
-        'Binds': [`${absolutePath}/ETH/network${networkid}/:/opt/bootnode`]
+        'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`]
       },
       //User:'1000:1000'
     },(err,stream)=>{
@@ -299,7 +259,7 @@ function createContainerBootNodeEnode(imageId, networkid){
         '/opt/bootnode': {}
       },
       'HostConfig': {
-        'Binds': [`${absolutePath}/ETH/network${networkid}/:/opt/bootnode`]
+        'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`]
       },
       User:""
     },(err,stream)=>{
@@ -330,76 +290,6 @@ function startContainer(containerid){
   })
 }
 
-/*function getBootNodeAddress(imageId, networkid){
-    docker.createContainer({
-      Image: imageId,
-      name: 'bootnode_'+'network_'+networkid,
-      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3"],
-      'Volumes': {
-        '/opt/bootnode': {}
-      },
-      'HostConfig': {
-        'Binds': [`${absolutePath}/ETH/network${networkid}/:/opt/bootnode`]
-      },
-      User:""
-    }, function(err, container) {
-      container.attach({
-        stream: true,
-        stdout: true,
-        stderr: true,
-        tty: true
-      }, function(err, stream) {
-        stream.pipe(process.stdout);
-        container.start(function(err, data) {
-          //console.log(data);
-        });
-      });
-    });
-}*/
-
-/**
- * Get logs from running container
- */
-/*function containerLogs(containerid) {
-
-  // create a single stream for stdin and stdout
-  var logStream = new stream.PassThrough();
-  logStream.on('data', function(chunk){
-    console.log(chunk.toString('utf8'));
-  });
-
-  container = docker.getContainer(containerid)
-  console.log("container " + JSON.stringify(container))
-  container.logs({
-    follow: true,
-    stdout: true,
-    stderr: true
-  }, function(err, stream){
-    if(err) {
-      console.log(err.message)
-      return
-    }
-    container.modem.demuxStream(stream, logStream, logStream);
-    stream.on('end', function(){
-      logStream.end('!stop!');
-    });
-
-    setTimeout(function() {
-      stream.destroy();
-    }, 2000);
-  });
-}*/
-
-function execScript(command){
-  //./docker_scripts/getbootnodeurl.sh bootnode_network_9874
-  exec(`sh ${command}`, (error, stdout, stderr) => {      
-      if (stderr !== null) {
-          console.log(`exec error: ${stderr}`);
-      }
-      console.log(stdout);
-  })
-}
-
 /**
  * Executes a shell command and return it as a Promise.
  * @param cmd {string}
@@ -417,30 +307,35 @@ function execShellCommand(cmd) {
   });
 }
 
-function getMyContainerLogs(containerName){
-    const container = docker.getContainer(containerName)
-    return container.logs({
-      follow: true,
-      stdout: true,
-      stderr: true,
-      details: false,
-      tail: 50,
-      timestamps: true
-    })
+function execCommandContainer(containerid){
+  return new Promise((resolve, reject)=>{
+    const container = docker.getContainer(containerid)
+    container.start(function(err, data) {
+    },(err,stream)=>{
+      if(err){
+        console.error(`Docker error when starting container:${containerid}` + err);
+        reject(err);
+      }else {
+        console.log(`Docker container started:${containerid}`);
+        resolve(stream);
+      }
+    });
+  })
 }
+
 
 module.exports = {
   pullImage,
   createNetwork,
-  createETHAccount,
-  getMyContainerLogs,
   a,
   generateBootNodeBootKey,
-  execScript,
   generateBootNodeBootKey,
   createContainerBootNodeKey,
   startContainer,
   createContainerBootNodeEnode,
   execShellCommand,
-  createContainerNode
+  createContainerNode,
+  createNodeNetwork,
+  execCommandContainer,
+  launchNode
 }
