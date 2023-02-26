@@ -257,6 +257,12 @@ function createContainerBootNodeEnode(imageId, networkid, enodePort){
   var _imageId = imageId
   var _networkid = networkid
   var _enodePort = enodePort
+  const json_PortBindings = JSON.parse('{'+ '"'+enodePort+"/tcp"+'"' + ':' + '['+'{'+'"'+"HostPort"+'"' +':' + '"'+enodePort+'"' + '}'+']'+'}')
+  //const json_PortBindings = JSON.parse('{'+'"'+"HostPort"+'"' +':' + '"'+enodePort+'"' + '}')
+  console.log("ooomg " + JSON.stringify(json_PortBindings))
+  const exposedPorts = '"'+_enodePort+"/tcp"+'"'
+  console.log("ooomg yeahh baby " + exposedPorts)
+  
 
   var createOptions = {
       Image:_imageId,
@@ -266,32 +272,34 @@ function createContainerBootNodeEnode(imageId, networkid, enodePort){
         '/opt/bootnode': {}
       },
       HostConfig: {
-        'PortBindings' : JSON.parse('{'+ '"'+`${_enodePort}`+"/tcp" + ':' + '['+'{'+"HostPort" +':' + '"'+`${_enodePort}`+'"' + '}'+']'+'}'),
+        'PortBindings' : json_PortBindings ,
         'Binds': [`${absolutePath}/Ethereum/network${_networkid}/:/opt/bootnode`]
       },
       ExposedPorts:{
-        "8010/tcp":{}
+        "8080/tcp":{}
       },
       User:""
   };
 
+  console.log("options " + JSON.stringify(createOptions))
+
   return new Promise((resolve, reject)=>{
-    docker.createContainer(/*{
+    docker.createContainer({
       Image: imageId,
       name: 'bootnode_'+'enode'+'_network_'+networkid,
-      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":8010"],
+      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":8012"],
       'Volumes': {
         '/opt/bootnode': {}
       },
       'HostConfig': {
-        'PortBindings' : {"8010/tcp" : [{"HostPort": "8012"}]},
+        'PortBindings' : {"8012/tcp" : [{"HostPort": "8012"}]},
         'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`]
       },
       ExposedPorts:{
         "8012/tcp":{}
       },
       User:""
-    }*/createOptions, (err,stream)=>{
+    }, (err,stream)=>{
       if(err){
         console.error(`Docker error when creating bootNode enode container:${networkid}` + err);
         reject(err);
