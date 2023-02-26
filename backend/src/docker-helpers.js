@@ -33,7 +33,8 @@ function createNodeNetwork(imageId, accountName, data_dir, networkid){
       'HostConfig': {
         'Binds': [`${absolutePath}/Ethereum/network${networkid}:/codecrypto/network${networkid}`]
       },
-      User:"`$(id -u $UID):$(id -g $UID)`"
+      //User:"`$(id -u $UID):$(id -g $UID)`"
+      User:"1000:1000"
     },(err,stream)=>{
       if(err){
         console.error(`Docker error when creating node initializarion on networkid:${networkid} ` + err);
