@@ -292,11 +292,11 @@ function createContainerBootNodeEnode(imageId, networkid, enodePort){
         '/opt/bootnode': {}
       },
       'HostConfig': {
-        'PortBindings' : {"8010/tcp" : [{"HostPort": "8012"}]},
+        'PortBindings' : {"8010/tcp" : [{"HostPort": "8015"}]},
         'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`]
       },
       ExposedPorts:{
-        "8012/tcp":{}
+        "8015/tcp":{}
       },
       User:""
     }, (err,stream)=>{
