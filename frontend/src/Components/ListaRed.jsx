@@ -7,7 +7,7 @@ import {useQuery} from 'react-query'
 
 export function ListaRed() {
     try {const {data, isLoading} = useQuery("network", ()=> {
-        return fetch('http://localhost:3000/network').then(res => res.json())
+        return fetch('http://localhost:3000/network/list').then(res => res.json())
     })
     if (isLoading) {
         return <div>Cargando...</div>

@@ -260,11 +260,11 @@ function createContainerBootNodeEnode(imageId, networkid){
         '/opt/bootnode': {}
       },
       'HostConfig': {
-        'PortBindings' : {"8010/tcp" : [{"HostPort": "8010"}]},
+        'PortBindings' : {"8010/tcp" : [{"HostPort": "8012"}]},
         'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`]
       },
       ExposedPorts:{
-        "8010/tcp":{}
+        "8012/tcp":{}
       },
       User:""
     },(err,stream)=>{
@@ -328,6 +328,18 @@ function execCommandContainer(containerid){
   })
 }
 
+function listContainer() {
+  return new Promise((resolve, reject) => {
+    docker.listContainers({'all':true}, (error, list) => {
+      if(error) {
+        reject(error)
+      } else {
+       // console.log(list)
+        resolve(list)
+      }
+    })
+  }) 
+}
 
 module.exports = {
   pullImage,
@@ -342,5 +354,6 @@ module.exports = {
   createContainerNode,
   createNodeNetwork,
   execCommandContainer,
-  launchNode
+  launchNode,
+  listContainer
 }
