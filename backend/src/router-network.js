@@ -134,7 +134,6 @@ router.get('/create/:numRed', (req, res) => {
     createIfNotExists(NETWORK_DIR)
     createIfNotExists(DIR_NODE)
     
-    
     await myDockerHelper.createContainerBootNodeKey('ethereum/client-go:alltools-v1.8.12', NUMERO_NETWORK)
     await myDockerHelper.startContainer(`bootnode_genkey_network_${NUMERO_NETWORK}`)
 
@@ -143,15 +142,16 @@ router.get('/create/:numRed', (req, res) => {
 
     const enodeAddress = await myDockerHelper.execShellCommand(`sh ./docker_scripts/getbootnodeurl.sh bootnode_enode_network_${NUMERO_NETWORK}`)
     console.log(`enode for bootnode_enode_network_${NUMERO_NETWORK} is ${enodeAddress}`)
-   
-            
-    const aa = await createAccount(DIR_NODE,"1234",NUMERO_NETWORK)
+    var _account_after_promise
+    const account = await createAccount(DIR_NODE,"1234",NUMERO_NETWORK)    
     .then(resultado => {
         console.log("here we go " + resultado)
         const CUENTAS_ALLOC = [
             resultado
-        ]        
+        ]       
         generateGenesis(NETWORK_CHAINID, resultado, BALANCE, CUENTAS_ALLOC, NETWORK_DIR)
+        _account_after_promise = resultado
+        return _account_after_promise
         
     }).then(
       await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_network_${NUMERO_NETWORK}`, DIR_NODE, NUMERO_NETWORK) 
@@ -161,12 +161,14 @@ router.get('/create/:numRed', (req, res) => {
         myDockerHelper.startContainer(`node_network_${NUMERO_NETWORK}`)
       }
     ).then(
-     
-        //setTimeout(async () => {
-          //console.log(`up to my ears with this.... but interesting dude, just playing......`)
-          //await myDockerHelper.execShellCommand(`chmod 777 -R ${DIR_NODE}/get`)
-        //},30000)
-      
+        async function launchNode() {
+          myDockerHelper.launchNode(`network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`, NUMERO_NETWORK, _account_after_promise , enodeAddress)
+        }
+    ).then(
+      async function startNode() {
+        console.log(`starting blockchain network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`)
+        myDockerHelper.startContainer(`network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`)
+      }
     )
     
     result = { network_id: NUMERO_NETWORK }

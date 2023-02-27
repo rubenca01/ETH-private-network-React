@@ -48,11 +48,12 @@ function createNodeNetwork(imageId, accountName, data_dir, networkid){
 }
 
 //docker run -it -u $(id -u $UID):$(id -g $UID) 
-// -p 8081:8081 -p 30001:30001 
-// -v /home/ruben/codecrypto/projects/ETH-private-NET/backend/src/Ethereum:/codecrypto ethereum/client-go 
-// --networkid "1" 
-// --ipcpath "\\.\pipe\geth1.ipc" 
-// --datadir /codecrypto/network1/node1 
+// -p {exposed}:8541
+// -p {exposed}:30031 
+// -v ${absolutePath}/ETH-private-NET/backend/src/Ethereum:/codecrypto ethereum/client-go 
+// --networkid "{networkid}" 
+// --ipcpath "\\.\pipe\geth{networkid}-{nodeid}.ipc" 
+// --datadir /codecrypto/network{id}/node1 
 // --syncmode full 
 // --http 
 // --http.api admin,eth,miner,net,txpool,personal 
@@ -60,31 +61,74 @@ function createNodeNetwork(imageId, accountName, data_dir, networkid){
 // --http.port 8541  
 // --http.corsdomain "*" 
 // --allow-insecure-unlock 
-// --unlock 0x45ffb6e1ad014bdb230dae7735085e4f09adae9c 
-// --password /codecrypto/network1/node1/pwd.txt 
+// --unlock 0x{45ffb6e1ad014bdb230dae7735085e4f09adae9c} 
+// --password /codecrypto/network{id}/node1/pwd.txt 
 // --mine 
 // --port 30031 
-// --bootnodes "enode://07b81ea8d5fa868348b8bd0e724dc5ec6e911ebbc773d815ab5c22bfc81f394a3fe942fe5b1409a431b27ba705171a066b1d63b0e8cb2ac5e6dfb57c09b78cb1@172.17.0.3:30301"
+// --bootnodes "{enode://07b81ea8d5fa868348b8bd0e724dc5ec6e911ebbc773d815ab5c22bfc81f394a3fe942fe5b1409a431b27ba705171a066b1d63b0e8cb2ac5e6dfb57c09b78cb1@172.17.0.3:{bootnodeExposedPort}"
+// --miner.etherbase 0x4187495fb415468d0622ebec0f7dca70fa6c1ec0
 
-function launchNode(imageId, accountName, networkid, account, enode){
+function launchNode(accountName, networkid, account, enode){
+  var val1 = Math.floor(8710 + Math.random() * 20);
+  var val2 = Math.floor(3001 + Math.random() * 20);
+  const imageId = 'ethereum/client-go:stable'
+  const cmd = [ "--networkid", networkid.toString() , 
+                "--ipcpath",`\\\.\\pipe\\geth${networkid}-${networkid}.ipc`, 
+                "--datadir", `/codecrypto/network${networkid}/node1`,
+                "--syncmode","full",
+                "--http",
+                "--dev",
+                "--http.api","admin,eth,miner,net,txpool,personal",
+                "--http.addr","0.0.0.0",
+                "--http.port","8541",
+                "--http.corsdomain",'"'+'*'+'"',
+                "--allow-insecure-unlock",
+                "--unlock",`0X${account}`,
+                "--password",`/codecrypto/network${networkid}/node1/pwd.txt`,
+                "--mine",
+                "--port","30031",
+                "--bootnodes",enode,
+                "--miner.etherbase",`0X${account}`
+              ]
+
+  const options =  {
+                      "name": accountName,
+                      "Volumes": {
+                        '/codecrypto': {}
+                      },
+                      "HostConfig": {
+                        'Binds': [`${absolutePath}/Ethereum:/codecrypto`],
+                        'PortBindings' : {
+                          "8545/tcp" : [{"HostPort": val1.toString()}],
+                          "30031/tcp" : [{"HostPort": val2.toString()}]
+                        },
+                      },
+                      "ExposedPorts":{
+                        "8541/tcp":{},
+                        "30031/tcp":{}
+                      },
+                      "User":"1000:1000"
+                    }          
   return new Promise((resolve, reject)=>{
-    docker.run(imageId,[], undefined, {
-      "name": accountName,
-      'Volumes': {
-        '/codecrypto': {}
-      },
-      'HostConfig': {
-        'Binds': [`${absolutePath}/Ethereum/network${networkid}:/codecrypto/network${networkid}`]
-      },
-      User:"`$(id -u $UID):$(id -g $UID)`"
-    },(err,stream)=>{
-      if(err){
-        console.error(`Error when launching Blockchain node on networkid:${networkid} ` + err);
-        reject(err);
-      }else {
-        console.log(`******************** Blockchain launched on network:${networkid} **************************`);
-        resolve(stream);
-      }
+    console.log("launching node cmd into promise: " + cmd + " ")
+    docker.run(imageId, cmd, [
+      process.stdout,
+      process.stderr
+    ], options, function (err, data, container) {
+      console.log("dasdsdsdddddddddddddddddddddddddddd")
+      if (err) {
+        console.error(`@@@@@@@@@@@@@@@@@@@@ Error when launching Blockchain node on networkid:${networkid} @@@@@@@@@@@@@@@@@@@@@` + err);
+        //reject(err)
+        return console.error(err);
+      } else {
+        if (data.StatusCode === '0') {
+          console.log(`******************** Blockchain launched on network:${networkid} **************************`);
+          resolve()
+        } else {
+          console.error(`@@@@@@@@@@@@@@@@@@@@ Error when launching Blockchain node on networkid:${networkid} @@@@@@@@@@@@@@@@@@@@@` + err);
+          reject('Container exit code: ' + data.StatusCode)
+        }
+      } 
     })
   })
 }
@@ -253,50 +297,20 @@ function createContainerBootNodeKey(imageId, networkid){
 
 
 function createContainerBootNodeEnode(imageId, networkid, enodePort){
-
-  var _imageId = imageId
-  var _networkid = networkid
-  var _enodePort = enodePort
-  const json_PortBindings = JSON.parse('{'+ '"'+enodePort+"/tcp"+'"' + ':' + '['+'{'+'"'+"HostPort"+'"' +':' + '"'+enodePort+'"' + '}'+']'+'}')
-  //const json_PortBindings = JSON.parse('{'+'"'+"HostPort"+'"' +':' + '"'+enodePort+'"' + '}')
-  console.log("ooomg " + JSON.stringify(json_PortBindings))
-  const exposedPorts = '"'+_enodePort+"/tcp"+'"'
-  console.log("ooomg yeahh baby " + exposedPorts)
-  
-
-  var createOptions = {
-      Image:_imageId,
-      name:'bootnode_'+'enode'+'_network_'+_networkid,
-      Cmd:["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":"+_enodePort],
-      Volumes: {
-        '/opt/bootnode': {}
-      },
-      HostConfig: {
-        'PortBindings' : json_PortBindings ,
-        'Binds': [`${absolutePath}/Ethereum/network${_networkid}/:/opt/bootnode`]
-      },
-      ExposedPorts:{
-        "8080/tcp":{}
-      },
-      User:""
-  };
-
-  console.log("options " + JSON.stringify(createOptions))
-
   return new Promise((resolve, reject)=>{
     docker.createContainer({
       Image: imageId,
       name: 'bootnode_'+'enode'+'_network_'+networkid,
-      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":8012"],
+      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":"+enodePort],
       'Volumes': {
         '/opt/bootnode': {}
       },
       'HostConfig': {
-        'PortBindings' : {"8010/tcp" : [{"HostPort": "8015"}]},
+        'PortBindings' : {"8010/tcp" : [{"HostPort": enodePort.toString()}]},
         'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`]
       },
       ExposedPorts:{
-        "8015/tcp":{}
+        "8010/tcp":{}
       },
       User:""
     }, (err,stream)=>{
