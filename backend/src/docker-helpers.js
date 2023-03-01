@@ -73,7 +73,7 @@ function launchNode(accountName, networkid, account, enode){
   var val2 = Math.floor(3001 + Math.random() * 20);
   const imageId = 'ethereum/client-go:stable'
   const cmd = [ "--networkid", networkid.toString() , 
-                "--ipcpath",`\\\.\\pipe\\geth${networkid}-${networkid}.ipc`, 
+                "--ipcpath",`\\\\.\\pipe\\geth${networkid}-${networkid}.ipc`, 
                 "--datadir", `/codecrypto/network${networkid}/node1`,
                 "--syncmode","full",
                 "--http",
@@ -99,7 +99,7 @@ function launchNode(accountName, networkid, account, enode){
                       "HostConfig": {
                         'Binds': [`${absolutePath}/Ethereum:/codecrypto`],
                         'PortBindings' : {
-                          "8545/tcp" : [{"HostPort": val1.toString()}],
+                          "8541/tcp" : [{"HostPort": val1.toString()}],
                           "30031/tcp" : [{"HostPort": val2.toString()}]
                         },
                       },
