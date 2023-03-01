@@ -10,7 +10,7 @@ async function listNetwork() {
         })
         return list
     } catch (error) {
-        console.log("error getting container list")
+        //console.log("error getting container list")
         throw new Error(error)
     }
 }
@@ -20,14 +20,14 @@ async function listNodes(networkid, Port) {
         var list = []
         const containers = await myDockerHelper.listContainer()
         containers.filter(x => x.Names[0].substr(1,x.Names[0].indexOf("_node_")-1)==`network_${networkid}`).map(x => {
-            console.log(x)
+            //console.log(x)
             list = [...list, {
                 "numero": x.Names[0].slice(x.Names[0].indexOf("_node_")+6, x.Names[0].length),
                 "puerto": x.Ports.filter(x => x.IP=="0.0.0.0" && x.PrivatePort == Port).map(x => x.PublicPort),
                 "status": x.Status
             }]
         })
-        console.log(list)
+        //console.log(list)
         return list
     } catch (error) {
         console.log("error getting container list")
