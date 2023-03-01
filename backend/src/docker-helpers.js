@@ -2,23 +2,36 @@ var Docker = require('dockerode');
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
 const fs = require("fs")
 const {resolve} = require('path')
-
 const absolutePath = resolve('');
-
 const { exec } = require('child_process');
+const { log } = console;
 
-function pullImage(imageId){
-    return new Promise((resolve, reject)=>{
-        docker.pull(imageId,{"disable-content-trust":"false"},(err,stream)=>{
-            if(err){
-                console.error("Docker pull failed for:" + imageId + "error:" + err);
-                reject(err);
-            }else {
-                console.log("Docker image installed: " + imageId);
-                resolve(stream);
-            }
-        })
-    })
+async function pullImage(imageId) {  
+  docker.pull(imageId,{"disable-content-trust":"false"},function(err, data) {
+    if (err){
+      throw Error("cannot pull image " + imageId)
+    } else{
+      log("pulling docker image " + imageId)
+      return imageId
+    }
+  })  
+}
+
+async function imageAlreadyOnServer(imageName) {
+  try {
+    const image = await docker.getImage(imageName).inspect()
+    return image
+  } catch(e){
+    log(`Image ${imageName} does not exist on this server ` + e)
+  }
+}
+
+async function getImage(imageName) {
+  const alreadyPresent = await imageAlreadyOnServer(imageName);
+  if (alreadyPresent == undefined) {
+    await pullImage(imageName);
+  }
+  return imageName;
 }
 
 function createNodeNetwork(imageId, accountName, data_dir, networkid){
@@ -114,80 +127,14 @@ function launchNode(accountName, networkid, account, enode){
     docker.run(imageId, cmd, [
       process.stdout,
       process.stderr
-    ], options, function (err, data, container) {
-      console.log("dasdsdsdddddddddddddddddddddddddddd")
-      if (err) {
-        console.error(`@@@@@@@@@@@@@@@@@@@@ Error when launching Blockchain node on networkid:${networkid} @@@@@@@@@@@@@@@@@@@@@` + err);
-        //reject(err)
+    ], options, function(err, data, container) {
+      if (err){
         return console.error(err);
-      } else {
-        if (data.StatusCode === '0') {
-          console.log(`******************** Blockchain launched on network:${networkid} **************************`);
-          resolve()
-        } else {
-          console.error(`@@@@@@@@@@@@@@@@@@@@ Error when launching Blockchain node on networkid:${networkid} @@@@@@@@@@@@@@@@@@@@@` + err);
-          reject('Container exit code: ' + data.StatusCode)
-        }
-      } 
+      }
+      console.log(data.StatusCode);
     })
   })
 }
-
-
-/*function createNetwork(imageId, networkID){
-    return new Promise((resolve, reject)=>{
-        docker.run(imageId, ["--networkid", networkID, "--http", "--http.addr", "0.0.0.0", "--http.api", "eth,web3,net,admin,personal", "--http.corsdomain"
-        //docker.run(imageId, ["version"
-          ,"*"], process.stdout, {
-            "name": 'geth',
-            'ExposedPorts': {
-              '9090/tcp': {}
-            },
-            'Hostconfig': {
-              'Binds': ['/home/vagrant:/stuff'],
-            }
-          }, function(err, data, container) {
-            if (err){
-              return console.error(err);
-            }
-            console.log(data.StatusCode);
-          });
-    })    
-}*/
-
-function a(imageId, accountName, data_dir, networkid){
-  //return new Promise((resolve, reject)=>{
-      const pwd = fs.readFileSync(`${data_dir}/pwd.txt`)
-      
-      docker.createContainer({
-        Image: imageId,
-        name: accountName,
-        Cmd: ["--datadir", "/codecrypto", "account", "new", "--password", "/codecrypto/pwd.txt"],
-        'Volumes': {
-          '/codecrypto': {}
-        },
-        'HostConfig': {
-          'Binds': [`${absolutePath}/Ethereum/network${networkid}:/codecrypto:rw`]
-        },
-        User:'1000:1000'
-      }, function(err, container) {
-        container.attach({
-          stream: true,
-          stdout: true,
-          stderr: true,
-          tty: true
-        }, function(err, stream) {
-
-          stream.pipe(process.stdout);
-          container.start(function(err, data) {
-            //console.log(data);
-          });
-        
-        });
-      });
-  //})    
-}
-
 
 function generateBootNodeBootKey(imageId, networkid){
   return new Promise((resolve, reject)=>{
@@ -294,8 +241,6 @@ function createContainerBootNodeKey(imageId, networkid){
   })
 }
 
-
-
 function createContainerBootNodeEnode(imageId, networkid, enodePort){
   return new Promise((resolve, reject)=>{
     docker.createContainer({
@@ -380,7 +325,6 @@ function listContainer() {
       if(error) {
         reject(error)
       } else {
-       // console.log(list)
         resolve(list)
       }
     })
@@ -389,8 +333,6 @@ function listContainer() {
 
 module.exports = {
   pullImage,
-  //createNetwork,
-  a,
   generateBootNodeBootKey,
   generateBootNodeBootKey,
   createContainerBootNodeKey,
@@ -401,5 +343,7 @@ module.exports = {
   createNodeNetwork,
   execCommandContainer,
   launchNode,
-  listContainer
+  listContainer,
+  imageAlreadyOnServer,
+  getImage
 }
