@@ -10,6 +10,7 @@ const absolutePath = resolve('');
 
 var Docker = require('dockerode');
 const { error } = require("console")
+const { del } = require("request")
 const { log } = console;
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
 
@@ -104,7 +105,7 @@ const delay = (duration) =>
   new Promise(resolve => setTimeout(resolve, duration));
 
 async function doit(network) {
-  await delay(17000);
+  await delay(12000);
   console.log("Let's the party start")
   const net_number = parseInt(network)
   const node_initial = 1
@@ -138,25 +139,16 @@ async function doit(network) {
     return _account_after_promise
     
   }).then(
-    await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_network_${net_number}`, DIR_NODE, net_number) 
+    await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_network_${net_number}`, DIR_NODE, net_number)
   ).then(
     async function startNode() {
       //console.log(`initializing node node_network_${net_number} data ${_account_after_promise}`)
       myDockerHelper.startContainer(`node_network_${net_number}`)
     }
-  ).then(
-    async function launchNode() {
-      //log("_account_after_promise " +_account_after_promise)
-      myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, _account_after_promise , enodeAddress)
-    }
-  ).then(
-        async function startNode() {
-          log(`starting blockchain network_${net_number}_node_${net_number}`)
-          await myDockerHelper.startContainer(`network_${net_number}_node_${net_number}`)
-        }
-   )
-      
-  log("still accomplishing my Promise, 'I am a good person'....... ")
+  ).then(() => {
+    myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, _account_after_promise , enodeAddress) 
+    console.log("Intermediate");
+  })
 
   return network
 }
@@ -166,10 +158,30 @@ router.get('/create/:numRed', async (req, res) => {
       const [image1, image2] = await Promise.all([await myDockerHelper.getImage('ethereum/client-go:stable'),await myDockerHelper.getImage('ethereum/client-go:alltools-v1.8.12')])
       
       const myNetworkEthereum = await doit(req.params.numRed)
-      res.json({ network_id: myNetworkEthereum })
+      . then(async result => {
+        const containers = await myDockerHelper.listContainer()
+        
+        let containerExist = false;
+        let d;
+        containers.forEach(containerInfo => {
+          log("containerInfo " + JSON.stringify(containerInfo.State))
+          if (containerInfo.Names[0] == `/network_${result}_node_${result}`) {
+            d = docker.getContainer(`/network_${result}_node_${result}`)
+            containerExist = true;
+          }
+        });
+
+        if (!containerExist) {
+          throw new Error(`something was wrong when creating the network, start container network_${result}_node_${result} manually`)
+        } else {
+          res.json({ network_id: result })
+        }               
+      })
+      
           
   } catch (error) {
     res.statusCode = 500
+    log("error")
     res.json({ error: error.message || error.toString() })
   }
 })

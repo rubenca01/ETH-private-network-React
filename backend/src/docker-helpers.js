@@ -82,6 +82,7 @@ function createNodeNetwork(imageId, accountName, data_dir, networkid){
 // --miner.etherbase 0x4187495fb415468d0622ebec0f7dca70fa6c1ec0
 
 function launchNode(accountName, networkid, account, enode){
+  return new Promise((resolve, reject)=>{
   var val1 = Math.floor(8710 + Math.random() * 20);
   var val2 = Math.floor(3001 + Math.random() * 20);
   const imageId = 'ethereum/client-go:stable'
@@ -101,11 +102,11 @@ function launchNode(accountName, networkid, account, enode){
                 "--mine",
                 "--port","30031",
                 "--bootnodes",enode,
-                "--miner.etherbase",`0X${account}`
+                "--miner.etherbase",`0X${account}`,
               ]
 
   const options =  {
-                      "name": accountName,
+                      //"name": accountName,
                       "Volumes": {
                         '/codecrypto': {}
                       },
@@ -122,16 +123,32 @@ function launchNode(accountName, networkid, account, enode){
                       },
                       "User":"1000:1000"
                     }          
-  return new Promise((resolve, reject)=>{
+  //return new Promise((resolve, reject)=>{
     console.log("launching node cmd into promise: " + cmd + " ")
-    docker.run(imageId, cmd, [
-      process.stdout,
-      process.stderr
-    ], options, function(err, data, container) {
-      if (err){
-        return console.error(err);
+    docker.createContainer({Image: imageId, name: accountName, Cmd: cmd, "Volumes": {
+      '/codecrypto': {}
+    },
+    "HostConfig": {
+      'Binds': [`${absolutePath}/Ethereum:/codecrypto`],
+      'PortBindings' : {
+        "8541/tcp" : [{"HostPort": val1.toString()}],
+        "30031/tcp" : [{"HostPort": val2.toString()}]
+      },
+    },
+    "ExposedPorts":{
+      "8541/tcp":{},
+      "30031/tcp":{}
+    }},(err,stream)=>{
+      if(err){
+        console.error(`Docker error when launching blockchain networkid:${networkid} ` + err);
+        reject(err);
+      }else {
+        container.start({}, function(err, data) {
+          containerLogs(container);
+        });
+        console.log(`Docker blockcahin launched on network:${networkid}`);
+        resolve(stream);
       }
-      console.log(data.StatusCode);
     })
   })
 }
@@ -271,7 +288,7 @@ function createContainerBootNodeEnode(imageId, networkid, enodePort){
 }
 
 function startContainer(containerid){
-  return new Promise((resolve, reject)=>{
+  return new Promise((resolve, reject)=> {
     const container = docker.getContainer(containerid)
     container.start(function(err, data) {
     },(err,stream)=>{
