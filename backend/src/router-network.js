@@ -1,4 +1,3 @@
-// https://expressjs.com/
 const express = require("express")
 const fs = require("fs")
 const router = express.Router()
@@ -11,25 +10,13 @@ const absolutePath = resolve('');
 
 var Docker = require('dockerode');
 const { error } = require("console")
+const { del } = require("request")
+const { log } = console;
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
 
 module.exports = router
 
 const BALANCE = "0x200000000000000000000000000000000000000000000000000000000000000"
-
-//pulling ethereum/client-go image form Docker Hub locally
-myDockerHelper.pullImage('ethereum/client-go:stable',{}).then((v)=>{
-   
-}).catch((ex)=>{
-    console.error("exception in pull image", ex);
-});
-
-//pulling ethereum/client-go image form Docker Hub locally
-myDockerHelper.pullImage('ethereum/client-go:alltools-v1.8.12',{}).then((v)=>{
-  
-}).catch((ex)=>{
-  console.error("exception in pull image", ex);
-});
 
 function createIfNotExists(path) {
   if (!fs.existsSync(path))
@@ -70,7 +57,6 @@ function createAccount(DIR_NODE, password, networkid ,callback) {
 
 function generateGenesis(NETWORK_CHAINID, CUENTA, BALANCE, CUENTAS_ALLOC, NETWORK_DIR) {
   const timestamp = Math.round(((new Date()).getTime() / 1000)).toString(16)
-  // leemos la plantilla del genesis
   let genesis = JSON.parse(fs.readFileSync(`${absolutePath}/genesisbase.json`).toString())
 
   console.log(`myGenesis ${genesis}`)
@@ -115,95 +101,90 @@ function generateParameter(network, node) {
   }) 
 }
 
+const delay = (duration) =>
+  new Promise(resolve => setTimeout(resolve, duration));
 
-//Lets creates the network
-router.get('/create/:numRed', (req, res) => {
-  var result
-  async function doit() {try {
-    const NUMERO_NETWORK = parseInt(req.params.numRed)
-    const NUMERO_NODO = 1
-    //const NUMERO_CUENTA = req.body.cuenta
-    const parametros = await generateParameter(NUMERO_NETWORK, NUMERO_NODO)
+async function doit(network) {
+  await delay(12000);
+  console.log("Let's the party start")
+  const net_number = parseInt(network)
+  const node_initial = 1
+  log("NET number " + net_number)
+  const parameters = await generateParameter(net_number, node_initial)
 
-    const { NETWORK_DIR, DIR_NODE, NETWORK_CHAINID, AUTHRPC_PORT, HTTP_PORT, PORT, IPCPATH, BOOTNODE_PORT } = parametros
+  const { NETWORK_DIR, DIR_NODE, NETWORK_CHAINID, AUTHRPC_PORT, HTTP_PORT, PORT, IPCPATH, BOOTNODE_PORT } = parameters
 
-    console.log("parameters " + JSON.stringify(parametros))
+  console.log("parameters " + JSON.stringify(parameters))
 
-    createIfNotExists("Ethereum")
-    //deleteIfExists(NETWORK_DIR)
-    createIfNotExists(NETWORK_DIR)
-    createIfNotExists(DIR_NODE)
+  createIfNotExists("Ethereum")
+  deleteIfExists(NETWORK_DIR)
+  createIfNotExists(NETWORK_DIR)
+  createIfNotExists(DIR_NODE)
+  
+  await myDockerHelper.createContainerBootNodeKey('ethereum/client-go:alltools-v1.8.12', net_number)
+  await myDockerHelper.startContainer(`bootnode_genkey_network_${net_number}`)
+
+  await myDockerHelper.createContainerBootNodeEnode('ethereum/client-go:alltools-v1.8.12', net_number, BOOTNODE_PORT)
+  await myDockerHelper.startContainer(`bootnode_enode_network_${net_number}`)
+  const enodeAddress = await myDockerHelper.execShellCommand(`sh ./docker_scripts/getbootnodeurl.sh bootnode_enode_network_${net_number}`)
+  log(`enode for bootnode_enode_network_${net_number} is ${enodeAddress}`)
+  var _account_after_promise
+  const account = await createAccount(DIR_NODE,"havingFunIsTheKeyofthehaPpineZZ", net_number)    
+  .then(resultado => {
+    const CUENTAS_ALLOC = [
+        resultado
+    ]       
+    generateGenesis(NETWORK_CHAINID, resultado, BALANCE, CUENTAS_ALLOC, NETWORK_DIR)
+    _account_after_promise = resultado
+    return _account_after_promise
     
-    await myDockerHelper.createContainerBootNodeKey('ethereum/client-go:alltools-v1.8.12', NUMERO_NETWORK)
-    await myDockerHelper.startContainer(`bootnode_genkey_network_${NUMERO_NETWORK}`)
+  }).then(
+    await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_network_${net_number}`, DIR_NODE, net_number)
+  ).then(
+    async function startNode() {
+      //console.log(`initializing node node_network_${net_number} data ${_account_after_promise}`)
+      myDockerHelper.startContainer(`node_network_${net_number}`)
+    }
+  ).then(() => {
+    myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, _account_after_promise , enodeAddress) 
+    console.log("Intermediate");
+  })
 
-    await myDockerHelper.createContainerBootNodeEnode('ethereum/client-go:alltools-v1.8.12', NUMERO_NETWORK, BOOTNODE_PORT)
-    await myDockerHelper.startContainer(`bootnode_enode_network_${NUMERO_NETWORK}`)
-
-    const enodeAddress = await myDockerHelper.execShellCommand(`sh ./docker_scripts/getbootnodeurl.sh bootnode_enode_network_${NUMERO_NETWORK}`)
-    console.log(`enode for bootnode_enode_network_${NUMERO_NETWORK} is ${enodeAddress}`)
-    var _account_after_promise
-    const account = await createAccount(DIR_NODE,"1234",NUMERO_NETWORK)    
-    .then(resultado => {
-        console.log("here we go " + resultado)
-        const CUENTAS_ALLOC = [
-            resultado
-        ]       
-        generateGenesis(NETWORK_CHAINID, resultado, BALANCE, CUENTAS_ALLOC, NETWORK_DIR)
-        _account_after_promise = resultado
-        return _account_after_promise
-        
-    }).then(
-      await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_network_${NUMERO_NETWORK}`, DIR_NODE, NUMERO_NETWORK) 
-    ).then(
-      async function startNode() {
-        console.log(`initializing node node_network_${NUMERO_NETWORK} data`)
-        myDockerHelper.startContainer(`node_network_${NUMERO_NETWORK}`)
-      }
-    ).then(
-        async function launchNode() {
-          myDockerHelper.launchNode(`network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`, NUMERO_NETWORK, _account_after_promise , enodeAddress)
-        }
-    ).then(
-      async function startNode() {
-        console.log(`starting blockchain network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`)
-        myDockerHelper.startContainer(`network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`)
-      }
-    )
-    
-    result = { network_id: NUMERO_NETWORK }
-  } catch (error) {
-    res.statusCode = 500
-    result = { error: error.message || error.toString() }
-  } finally {
-    res.json(result)
-  }
+  return network
 }
-doit()
-})
 
-//Lets list all networks
-/* router.get('/list', async (req, res) => {
-  try {
-
-    const networks = [];
-    const cuentas = { "alloc": {
-      "704765a908962e25626f2bea8cdf96c84dedaa0b": {
-        "balance": "0x200000000000000000000000000000000000000000000000000000000000000"
-      }
-    }}
-    networks.push({ number: "NETWORK1", chainid: 'XXXXXXX', cuentas: cuentas });
-    networks.push({ number: "NETWORK2", chainid: 'YYYYYYY', cuentas: cuentas });
-    networks.push({ number: "NETWORK2", chainid: 'ZZZZZZZ', cuentas: cuentas });
+router.get('/create/:numRed', async (req, res) => {
+    try {
+      const [image1, image2] = await Promise.all([await myDockerHelper.getImage('ethereum/client-go:stable'),await myDockerHelper.getImage('ethereum/client-go:alltools-v1.8.12')])
+      
+      const myNetworkEthereum = await doit(req.params.numRed)
+      . then(async result => {
+        const containers = await myDockerHelper.listContainer()
         
-    const result = { networks }
+        let containerExist = false;
+        let d;
+        containers.forEach(containerInfo => {
+          log("containerInfo " + JSON.stringify(containerInfo.State))
+          if (containerInfo.Names[0] == `/network_${result}_node_${result}`) {
+            d = docker.getContainer(`/network_${result}_node_${result}`)
+            containerExist = true;
+          }
+        });
 
-    res.json(result)
+        if (!containerExist) {
+          throw new Error(`something was wrong when creating the network, start container network_${result}_node_${result} manually`)
+        } else {
+          res.json({ network_id: result })
+        }               
+      })
+      
+          
   } catch (error) {
     res.statusCode = 500
-    res.json({ error: error.message || error.toString() });
-  }  
-}) */
+    log("error")
+    res.json({ error: error.message || error.toString() })
+  }
+})
 
 router.get('/list', async (req, res) => {
   try {
@@ -215,7 +196,6 @@ router.get('/list', async (req, res) => {
     res.json({ error: error.message || error.toString() });
   }  
 })
-
 
 router.get('/node/list/:networkid', async (req, res) => {
   try {
