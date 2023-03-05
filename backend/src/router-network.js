@@ -5,6 +5,7 @@ const router = express.Router()
 const bodyParser = require('body-parser')
 const myDockerHelper = require("./docker-helpers")
 const listar = require('./list')
+const myeth= require('./eth')
 const myUtils = require("./utils")
 const {resolve} = require('path')
 const absolutePath = resolve('');
@@ -208,7 +209,7 @@ doit()
 router.get('/list', async (req, res) => {
   try {
     const result = {networks: await listar.listNetwork()}
-
+    console.log(result)
     res.json(result)
   } catch (error) {
     res.statusCode = 500
@@ -219,11 +220,42 @@ router.get('/list', async (req, res) => {
 
 router.get('/node/list/:networkid', async (req, res) => {
   try {
-    const result = {nodos: await listar.listNodes(req.params.networkid, "8545")}
-
+    const result = {nodos: await listar.listNodes(req.params.networkid, "8541")}
     res.json(result)
   } catch (error) {
     res.statusCode = 500
     res.json({ error: error.message || error.toString() });
   }  
+})
+
+/* router.get('/block', async (req, res) => {
+  try {
+    const block = await myeth.getLastBlock()
+    res.send(block.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  } 
+}) */
+
+router.get('/:networkid/block', async (req, res) => {
+  try {
+    const block = await listar.getPort(req.params.networkid, "8541")
+    .then(puerto => myeth.getLastBlock(puerto))
+    res.send(block.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  } 
+})
+
+router.get('/:networkid/chainID', async (req, res) => {
+  try {
+    const block = await listar.getPort(req.params.networkid, "8541")
+    .then(puerto => myeth.getChainId(puerto))
+    res.send(block.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  } 
 })
