@@ -2,14 +2,55 @@ const express = require("express")
 const router = express.Router()
 const fs = require("fs")
 const myDockerHelper = require("./docker-helpers")
+const myUtils = require("./utils")
 const { error } = require("console")
 const { log } = console
 var Docker = require('dockerode')
 var docker = new Docker({socketPath: '/var/run/docker.sock'})
 module.exports =  router
 
-async function doit(network,node_initial) {
-    //TODO
+const BALANCE = "0x200000000000000000000000000000000000000000000000000000000000000"
+
+const delay = (duration) =>
+  new Promise(resolve => setTimeout(resolve, duration))
+
+async function doit(network,node) {
+    await delay(1000)
+    console.log("Let's the party start again")
+    const parameters = await myUtils.generateParameter(network, node)
+
+    const { NETWORK_DIR, DIR_NODE, NETWORK_CHAINID, AUTHRPC_PORT, HTTP_PORT, PORT, IPCPATH, BOOTNODE_PORT } = parameters
+
+    console.log("parameters " + JSON.stringify(parameters))
+
+    myUtils.createIfNotExists(DIR_NODE)
+
+    let _account_after_promise
+    const account = await myUtils.createAccount(DIR_NODE,"havingFunIsTheKeyofthehaPpineZZ", network, node)
+    .then(resultado => {
+        const CUENTAS_ALLOC = [
+            resultado
+        ]       
+        myUtils.generateGenesis(NETWORK_CHAINID, resultado, BALANCE, CUENTAS_ALLOC, NETWORK_DIR)
+        _account_after_promise = resultado
+        return _account_after_promise
+        
+    }).then(
+        await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_${node}_network_${network}`, DIR_NODE, network, node)
+    ).then(
+        async function startNode() {
+            myDockerHelper.startContainer(`node_${node}_network_${network}`)
+        }
+    ).then(() => {
+        //let enodeAddress TODO, read from enode.txt
+        const enode =  fs.readFileSync(`${NETWORK_DIR}/enode.txt`, 'utf8')
+        log("enode stored " + JSON.stringify(enode))
+        myDockerHelper.launchNode(`network_${network}_node_${node}`, network, _account_after_promise , enode, node) 
+        log("Intermediate")        
+    })
+    //TODO, figure out why cannot start `network_${network}_node_${node}` container, seems some delays........
+        
+    return {network_id: network, node_id: node}
 }
 
 router.post("/add", async (req, res) => {
@@ -17,6 +58,7 @@ router.post("/add", async (req, res) => {
 
         let network = req.body.networkid
         let node = req.body.nodeid
+        let addNode
 
         const containers = await myDockerHelper.listContainer()
         let containerExist = false
@@ -34,10 +76,10 @@ router.post("/add", async (req, res) => {
         if (!containerExist) {
             throw new Error(`Blockchain network ${network} does not exist/or all its nodes are stopped`)
         } else {
-            const addNode = await doit(network, node)
+            addNode = await doit(network, node)
         }
         
-        res.status(200).send({network_id: network, node_id: node})
+        res.status(200).send(addNode)
 
     } catch (error) {
         res.statusCode = 500

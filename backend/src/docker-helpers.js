@@ -34,12 +34,12 @@ async function getImage(imageName) {
   return imageName;
 }
 
-function createNodeNetwork(imageId, accountName, data_dir, networkid){
+function createNodeNetwork(imageId, accountName, data_dir, networkid, node){
   return new Promise((resolve, reject)=>{
     docker.createContainer({
       Image: imageId,
       name: accountName,
-      Cmd: ["--datadir", `/codecrypto/network${networkid}/node1`, "init", `/codecrypto/network${networkid}/genesis.json`],
+      Cmd: ["--datadir", `/codecrypto/network${networkid}/node${node}`, "init", `/codecrypto/network${networkid}/genesis.json`],
       'Volumes': {
         '/codecrypto': {}
       },
@@ -50,45 +50,24 @@ function createNodeNetwork(imageId, accountName, data_dir, networkid){
       User:"1000:1000"
     },(err,stream)=>{
       if(err){
-        console.error(`Docker error when creating node initializarion on networkid:${networkid} ` + err);
+        console.error(`Docker error when creating node ${node} initializarion on networkid:${networkid} ` + err);
         reject(err);
       }else {
-        console.log(`Docker node initialization created on network:${networkid}`);
+        console.log(`Docker node ${node} initialization created on network:${networkid}`);
         resolve(stream);
       }
     })
   })
 }
 
-//docker run -it -u $(id -u $UID):$(id -g $UID) 
-// -p {exposed}:8541
-// -p {exposed}:30031 
-// -v ${absolutePath}/ETH-private-NET/backend/src/Ethereum:/codecrypto ethereum/client-go 
-// --networkid "{networkid}" 
-// --ipcpath "\\.\pipe\geth{networkid}-{nodeid}.ipc" 
-// --datadir /codecrypto/network{id}/node1 
-// --syncmode full 
-// --http 
-// --http.api admin,eth,miner,net,txpool,personal 
-// --http.addr 0.0.0.0 
-// --http.port 8541  
-// --http.corsdomain "*" 
-// --allow-insecure-unlock 
-// --unlock 0x{45ffb6e1ad014bdb230dae7735085e4f09adae9c} 
-// --password /codecrypto/network{id}/node1/pwd.txt 
-// --mine 
-// --port 30031 
-// --bootnodes "{enode://07b81ea8d5fa868348b8bd0e724dc5ec6e911ebbc773d815ab5c22bfc81f394a3fe942fe5b1409a431b27ba705171a066b1d63b0e8cb2ac5e6dfb57c09b78cb1@172.17.0.3:{bootnodeExposedPort}"
-// --miner.etherbase 0x4187495fb415468d0622ebec0f7dca70fa6c1ec0
-
-function launchNode(accountName, networkid, account, enode){
+function launchNode(accountName, networkid, account, enode, node){
   return new Promise((resolve, reject)=>{
   var val1 = Math.floor(8710 + Math.random() * 20);
   var val2 = Math.floor(3001 + Math.random() * 20);
   const imageId = 'ethereum/client-go:stable'
   const cmd = [ "--networkid", networkid.toString() , 
                 "--ipcpath",`\\\\.\\pipe\\geth${networkid}-${networkid}.ipc`, 
-                "--datadir", `/codecrypto/network${networkid}/node1`,
+                "--datadir", `/codecrypto/network${networkid}/node${node}`,
                 "--syncmode","full",
                 "--http",
                 "--dev",
@@ -98,7 +77,7 @@ function launchNode(accountName, networkid, account, enode){
                 "--http.corsdomain",'"'+'*'+'"',
                 "--allow-insecure-unlock",
                 "--unlock",`0X${account}`,
-                "--password",`/codecrypto/network${networkid}/node1/pwd.txt`,
+                "--password",`/codecrypto/network${networkid}/node${node}/pwd.txt`,
                 "--mine",
                 "--port","30031",
                 "--bootnodes",enode,
@@ -208,7 +187,7 @@ function generateBootNodeBootKey(imageId, networkid){
 }
 
 
-function createContainerNode(imageId, accountName, data_dir, networkid){
+function createContainerNode(imageId, accountName, data_dir, networkid, node){
   return new Promise((resolve, reject)=>{
     docker.createContainer({
       Image: imageId,
@@ -218,15 +197,15 @@ function createContainerNode(imageId, accountName, data_dir, networkid){
         '/codecrypto': {}
       },
       'HostConfig': {
-        'Binds': [`${absolutePath}/Ethereum/network${networkid}/node1:/codecrypto:rw`]
+        'Binds': [`${absolutePath}/Ethereum/network${networkid}/node${node}:/codecrypto:rw`]
       },
       User:'1000:1000'
     },(err,stream)=>{
       if(err){
-        console.error(`Docker error when creating node on networkid:${networkid} ` + err);
+        console.error(`Docker error when creating node ${node} on networkid:${networkid} ` + err);
         reject(err);
       }else {
-        console.log(`Docker node created  on network:${networkid}`);
+        console.log(`Docker node ${node} created on network:${networkid}`);
         resolve(stream);
       }
     })
