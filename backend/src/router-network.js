@@ -259,3 +259,22 @@ router.get('/:networkid/chainID', async (req, res) => {
     res.json({ error: error.message || error.toString() });
   } 
 })
+
+router.post('/charge', async (req, res) => {
+  try{
+    console.log(req.body)
+    const importe = req.body.amount
+    const direccion = req.body.address
+    const networkid = req.body.networkid
+    const respuesta = await listar.getPortNodo(networkid, "8541")
+    .then(async node =>{
+      return await myeth.getChainId(node.puerto)  
+      .then(async chainID => myeth.cargar(networkid, node.nodo, node.puerto, chainID, importe, direccion))
+    })
+    console.log("réponse", respuesta)
+    res.send(respuesta.transactionHash.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  }
+})

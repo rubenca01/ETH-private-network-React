@@ -4,6 +4,7 @@ import { ListaNodo } from "./ListaNodo"
 import { Context } from "../App"
 import { BlockList } from "./BlockList"
 import { ChainID } from "./ChainID"
+import { Faucet } from "./Faucet"
 
 export function RedDetail() {
     //const [estado, setEstado]= useContext(Context)
@@ -16,6 +17,7 @@ export function RedDetail() {
         <ChainID/>
         <ListaNodo/>
         <BlockList/>
+        <Faucet/>
         
     </div>
 }

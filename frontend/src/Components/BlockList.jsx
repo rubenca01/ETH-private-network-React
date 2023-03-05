@@ -14,7 +14,7 @@ export function BlockList() {
         console.log(data)
         var rows = []
         for (let i=data; i>=0 && i>= data-10; i--) {
-            rows.push(<li key= {data}><Link to={`/Block/${networkid}/${data}`}>{`block number ${data}`}</Link></li>)
+            rows.push(<li key= {i}><Link to={`/Block/${networkid}/${i}`}>{`block number ${i}`}</Link></li>)
         }
         return <div className="mt-3">
             <h3>Ultimos bloques de la red</h3>

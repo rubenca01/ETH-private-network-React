@@ -61,8 +61,19 @@ async function getPort(networkid, Port) {
     return puerto
 }
 
+async function getPortNodo(networkid, Port) {
+    const nodo = await listNodes(networkid, Port)
+    .then(x => x.filter(item => item.puerto != null))
+    .then(x => {
+        //console.log(x[0])
+        return  {puerto: x[0].puerto, nodo: x[0].numero}
+    })
+    return nodo
+}
+
 module.exports = {
     listNetwork,
     listNodes,
-    getPort
+    getPort,
+    getPortNodo
 }
