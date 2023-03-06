@@ -11,6 +11,7 @@ import { Welcome } from './Components/Welcome'
 import { RedDetail } from './Components/RedDetail'
 import { NuevaRed } from './Components/NuevaRed'
 import { BlockDetail } from './Components/BlockDetail'
+import { TxDetail } from './Components/TxDetail'
 
 const queryClient = new QueryClient()  
 export const Context = createContext(null)
@@ -30,6 +31,7 @@ export function App() {
             <Route path="/red/:numero" element={<RedDetail/>}/>
             <Route path="/Nuevared" element={<NuevaRed/>}/>
             <Route path="/Block/:networkid/:block" element={<BlockDetail/>}/>
+            <Route path="/transaction/:networkid/:TxHash" element={<TxDetail/>}/>
 
           </Route>
         </Routes>

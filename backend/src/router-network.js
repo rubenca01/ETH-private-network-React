@@ -10,6 +10,7 @@ const myUtils = require("./utils")
 const {resolve} = require('path')
 const absolutePath = resolve('');
 
+
 var Docker = require('dockerode');
 const { error } = require("console")
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
@@ -273,6 +274,22 @@ router.post('/charge', async (req, res) => {
     })
     console.log("réponse", respuesta)
     res.send(respuesta.transactionHash.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  }
+})
+
+router.post('/blockdetail', async (req, res) => {
+  try{
+    const number = req.body.blocknumber
+    const networkid = req.body.networkid
+    const respuesta = await listar.getPort(networkid, "8541")
+    .then(async puerto =>{
+      return await myeth.blockDetail(puerto, number)  
+    })
+    //console.log("réponse", respuesta)
+    res.send(respuesta)
   } catch (error) {
     res.statusCode = 500
     res.json({ error: error.message || error.toString() });

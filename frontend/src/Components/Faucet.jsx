@@ -27,12 +27,12 @@ export function Faucet() {
             networkid: params.numero
         }
         console.log(data)
-       /*  fetch("http://localhost:3000/network/charge", {
+        fetch("http://localhost:3000/network/charge", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: data
+            headers: {'Content-Type': "application/json"},
+            body: JSON.stringify(data)
 
-        }) */
+        })
 
     }
 

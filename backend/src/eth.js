@@ -61,7 +61,7 @@ async function getChainId(puerto) {
 
 async function cargar(networkid, nodo, puerto, chainID, importe, direccion) {
     const web3 = new Web3(`http://localhost:${puerto}`)
-    const directorio =`./Ethereum/network${networkid}/node1`
+    const directorio =`./Ethereum/network${networkid}/node1` //change the node number when it is merged with a corrected dev
     const pwd = fs.readFileSync(`${directorio}/pwd.txt`).toString()
     //console.log(pwd)
     return await myUtils.readdirec(`${directorio}/keystore`)
@@ -91,10 +91,38 @@ async function cargar(networkid, nodo, puerto, chainID, importe, direccion) {
     .then(async txSigned => await web3.eth.sendSignedTransaction(txSigned.rawTransaction))
 }
 
+async function blockDetail(puerto, BlockNumber) {
+    try {
+        const BlockHex = "0x" + parseInt(BlockNumber).toString(16)
+        console.log(BlockHex)
+        const data = await fetch(`http://localhost:${puerto}`, {
+            method : "POST",
+            headers: {
+                'Content-Type': "application/json"
+            },   
+            body: JSON.stringify({"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":[BlockHex, false],"id":27})
+        })
+        .then(x => x.json())
+        .then(x => {
+            //console.log(x)
+            if(x.result) {
+                return x.result
+            } else {
+                throw new Error("no result")
+            }
+        })
+        return data
+    } catch (e) {
+        throw new Error(e)
+    }
+}
+
+
 
 
 module.exports = {
     getLastBlock,
     getChainId,
-    cargar
+    cargar,
+    blockDetail
 }
