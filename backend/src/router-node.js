@@ -38,17 +38,17 @@ async function doit(network,node) {
     }).then(
         await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_${node}_network_${network}`, DIR_NODE, network, node)
     ).then(
-        async function startNode() {
+        async => {
             myDockerHelper.startContainer(`node_${node}_network_${network}`)
         }
     ).then(() => {
-        //let enodeAddress TODO, read from enode.txt
         const enode =  fs.readFileSync(`${NETWORK_DIR}/enode.txt`, 'utf8')
         log("enode stored " + JSON.stringify(enode))
-        myDockerHelper.launchNode(`network_${network}_node_${node}`, network, _account_after_promise , enode, node) 
-        log("Intermediate")        
+        myDockerHelper.launchNode(`network_${network}_node_${node}`, network, _account_after_promise , enode, node)      
     })
-    //TODO, figure out why cannot start `network_${network}_node_${node}` container, seems some delays........
+    .then(async () => {
+        return delay(2000).then(()=>myDockerHelper.startContainer(`network_${network}_node_${node}`))
+    })
         
     return {network_id: network, node_id: node}
 }

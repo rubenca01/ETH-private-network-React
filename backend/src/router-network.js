@@ -19,16 +19,17 @@ const delay = (duration) =>
   new Promise(resolve => setTimeout(resolve, duration))
 
 async function doit(network) {
-  await delay(12000)
+  //await delay(12000)
   console.log("Let's the party start")
   const net_number = parseInt(network)
   const node_initial = 1
+  let jambo
   log("NET number " + net_number)
   const parameters = await myUtils.generateParameter(net_number, node_initial)
 
   const { NETWORK_DIR, DIR_NODE, NETWORK_CHAINID, AUTHRPC_PORT, HTTP_PORT, PORT, IPCPATH, BOOTNODE_PORT } = parameters
 
-  console.log("parameters " + JSON.stringify(parameters))
+  //console.log("parameters " + JSON.stringify(parameters))
 
   myUtils.createIfNotExists("Ethereum")
   myUtils.deleteIfExists(NETWORK_DIR)
@@ -42,27 +43,38 @@ async function doit(network) {
   await myDockerHelper.startContainer(`bootnode_enode_network_${net_number}`)
   const enodeAddress = await myDockerHelper.execShellCommand(`sh ./docker_scripts/getbootnodeurl.sh bootnode_enode_network_${net_number}`)
   myUtils.writeFile(`${NETWORK_DIR}/enode.txt`, enodeAddress)
-  log(`enode for bootnode_enode_network_${net_number} is ${enodeAddress}`)
+  //log(`enode for bootnode_enode_network_${net_number} is ${enodeAddress}`)
   var _account_after_promise
   const account = await myUtils.createAccount(DIR_NODE,"havingFunIsTheKeyofthehaPpineZZ", net_number, node_initial)    
   .then(resultado => {
     const CUENTAS_ALLOC = [
         resultado
     ]       
-    myUtils.generateGenesis(NETWORK_CHAINID, resultado, BALANCE, CUENTAS_ALLOC, NETWORK_DIR)
-    _account_after_promise = resultado
+    _account_after_promise = {acc:resultado, acc_alloc:CUENTAS_ALLOC}
+    jambo = _account_after_promise.acc
     return _account_after_promise
     
-  }).then(
-    await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_${node_initial}_network_${net_number}`, DIR_NODE, net_number, node_initial)
-  ).then(
-    async function startNode() {
-      myDockerHelper.startContainer(`node_${node_initial}_network_${net_number}`)
-    }
-  ).then(() => {
-    myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, _account_after_promise , enodeAddress, node_initial) 
-    console.log("Intermediate")
+  }).then(async result => {
+    //log(result)
+    return await myUtils.generateGenesis(NETWORK_CHAINID, result.acc, BALANCE, result.acc_alloc, NETWORK_DIR)
   })
+  /*.then(async () => {
+    const read = await fs.readFileSync(`${NETWORK_DIR}/genesis.json`,'utf-8')
+    log("genesis " + JSON.stringify(read))
+  })*/
+  .then(async () => {
+    return delay(2000).then(()=>myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_${node_initial}_network_${net_number}`, DIR_NODE, net_number, node_initial),log("que hacemos? ")) 
+  })
+  .then(async () => {
+    return delay(3000).then(()=>myDockerHelper.startContainer(`node_${node_initial}_network_${net_number}`),log("una fiesta? "))  
+  })
+  .then(async () => {
+    return delay(4000).then(()=>myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, jambo , enodeAddress, node_initial),log("con muchas cervezas!!!"))
+  })
+  .then(async () => {
+    return delay(5000).then(()=>myDockerHelper.startContainer(`network_${net_number}_node_${net_number}`),log("TODA LA NOCHE!!!"))
+  })
+  
 
   return network
 }
@@ -78,7 +90,7 @@ router.get('/create/:numRed', async (req, res) => {
         let containerExist = false;
         let d;
         containers.forEach(containerInfo => {
-          log("containerInfo " + JSON.stringify(containerInfo.State))
+          //log("containerInfo " + JSON.stringify(containerInfo.State))
           if (containerInfo.Names[0] == `/network_${result}_node_${result}`) {
             d = docker.getContainer(`/network_${result}_node_${result}`)
             containerExist = true;
@@ -95,7 +107,6 @@ router.get('/create/:numRed', async (req, res) => {
           
   } catch (error) {
     res.statusCode = 500
-    log("error")
     res.json({ error: error.message || error.toString() })
   }
 })

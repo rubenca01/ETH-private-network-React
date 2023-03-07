@@ -3,14 +3,14 @@ const myDockerHelper = require("./docker-helpers")
 const {resolve} = require('path')
 const absolutePath = resolve('');
 
+const delay = (duration) =>
+  new Promise(resolve => setTimeout(resolve, duration))
+
 const readFile = (path, opts = 'utf8') =>
   new Promise((resolve, reject) => {
-    console.log("pora qui")
     fs.readFile(path, opts, (err, data) => {
-      console.log("otro")
       if (err) reject(err)
       else {
-        console.log("log data" + data)
         resolve(data)
       }
     })
@@ -45,36 +45,43 @@ function createAccount(DIR_NODE, password, networkid,node,callback) {
 
   function cuentaPromise () { return new Promise((resolve, reject )=> {
     setTimeout(async () => {
-      console.log("node dir " + DIR_NODE);
+      //console.log("node dir " + DIR_NODE);
       myDockerHelper.execShellCommand(`chmod 777 -R ${DIR_NODE}/keystore`)
       .then(() =>  readdirec(`${DIR_NODE}/keystore`))
       .then(async listFS => {
-        console.log("ListFS: ", listFS[0])
+        //console.log("ListFS: ", listFS[0])
         return await fs.readFileSync(`${DIR_NODE}/keystore/${listFS[0]}`, 'utf8')})
       .then(x => {
-        console.log("fichero " + x)
+        //console.log("fichero " + x)
         resolve(JSON.parse(x).address)
       })
     },5000)
   })}
   return new Promise(async (resolve, reject) => {
     writeFile(`${DIR_NODE}/pwd.txt`, password)
-    .then(await myDockerHelper.createContainerNode('ethereum/client-go:stable', `node_${node}_account_${networkid}`, DIR_NODE, networkid, node))
-    .then(await myDockerHelper.startContainer(`node_${node}_account_${networkid}`))
+    .then(async () => {
+      console.log("sjsjsjsj")
+      await myDockerHelper.createContainerNode('ethereum/client-go:stable', `node_${node}_account_${networkid}`, DIR_NODE, networkid, node)
+      .catch(error => {return error})
+    })
+    .then(async () => {
+      console.log("bababba")
+      await myDockerHelper.startContainer(`node_${node}_account_${networkid}`)
+    })
     .then(async () => await cuentaPromise())
     .then(result => {
-      console.log("Cuenta: ", result)
+      //console.log("Cuenta: ", result)
       resolve(result) 
 
     })
   })
 }
 
-function generateGenesis(NETWORK_CHAINID, CUENTA, BALANCE, CUENTAS_ALLOC, NETWORK_DIR) {
+async function generateGenesis(NETWORK_CHAINID, CUENTA, BALANCE, CUENTAS_ALLOC, NETWORK_DIR) {
   const timestamp = Math.round(((new Date()).getTime() / 1000)).toString(16)
   let genesis = JSON.parse(fs.readFileSync(`${absolutePath}/genesisbase.json`).toString())
 
-  console.log(`myGenesis ${genesis}`)
+  //console.log(`myGenesis ${genesis}`)
 
   genesis.config.chainId = NETWORK_CHAINID
   genesis.extraData = `0x${'0'.repeat(64)}${CUENTA}${'0'.repeat(130)}`
@@ -86,6 +93,10 @@ function generateGenesis(NETWORK_CHAINID, CUENTA, BALANCE, CUENTAS_ALLOC, NETWOR
   }, {})
 
   fs.writeFileSync(`${NETWORK_DIR}/genesis.json`, JSON.stringify(genesis))
+
+  const genesis_content = await JSON.parse(fs.readFileSync(`${NETWORK_DIR}/genesis.json`).toString())
+
+  return genesis_content
 
 }
 
