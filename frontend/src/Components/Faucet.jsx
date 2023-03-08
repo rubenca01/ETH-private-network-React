@@ -39,7 +39,7 @@ export function Faucet() {
 
     return <div>
         <h3 className="mt-3">Faucet</h3>
-        <p>{`Cuenta que cargar :${account}`}</p>
+        <p>{`Cuenta que cargar: ${account}`}</p>
         <form onSubmit={handleSubmit(cargar)}>
             <div className="form-group w-25">
                 <label>Introduzca el importe</label>

@@ -295,3 +295,31 @@ router.post('/blockdetail', async (req, res) => {
     res.json({ error: error.message || error.toString() });
   }
 })
+
+router.post('/transaction', async (req, res) => {
+  const Tx = req.body.Tx
+  const networkid = req.body.networkid
+  await listar.getPort(networkid, "8541")
+    .then(async puerto =>{
+      return await myeth.getTx(puerto, Tx)  
+    }).then(respuesta => res.send(respuesta))
+    .catch(e => {
+      res.statusCode = 500
+      res.json({ error: error.message || error.toString() })
+    })
+})
+
+router.post('/balance', async (req, res) => {
+  const address = req.body.address
+  const networkid = req.body.networkid
+  await listar.getPort(networkid, "8541")
+    .then(async puerto =>{
+      return await myeth.getBal(puerto, address)  
+    }).then(respuesta => {
+      res.send(respuesta.toString())
+    })
+    .catch(e => {
+      res.statusCode = 500
+      res.json({ error: error.message || error.toString() })
+    })
+})

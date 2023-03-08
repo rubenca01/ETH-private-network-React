@@ -22,6 +22,7 @@ export function BlockDetail() {
         <h2 className="mt-3">
             {`Detalles del bloque ${params.block} de la red ${params.networkid}`}
         </h2>
+        <h3 className="mt-3">{`Fecha: ${new Date(parseInt(data.timestamp)*1000)}`}</h3>
         <h3 className="mt-3">
             List of transactions
         </h3>
