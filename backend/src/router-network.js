@@ -31,15 +31,21 @@ async function doit(network) {
 
   //console.log("parameters " + JSON.stringify(parameters))
 
-  myUtils.createIfNotExists("Ethereum")
+  myUtils.createIfNotExists("../Ethereum")
   myUtils.deleteIfExists(NETWORK_DIR)
   myUtils.createIfNotExists(NETWORK_DIR)
   myUtils.createIfNotExists(DIR_NODE)
-  
+
+  //const docker_net = await docker.getNetwork(`blockchain_network_${net_number}`)
+  //if(!docker_net)
+  const docker_net = await myDockerHelper.createDockerNETWORK(net_number)
+
+  console.log("docker network " + JSON.stringify(docker_net.id))
+
   await myDockerHelper.createContainerBootNodeKey('ethereum/client-go:alltools-v1.8.12', net_number)
   await myDockerHelper.startContainer(`bootnode_genkey_network_${net_number}`)
 
-  await myDockerHelper.createContainerBootNodeEnode('ethereum/client-go:alltools-v1.8.12', net_number, BOOTNODE_PORT)
+  await myDockerHelper.createContainerBootNodeEnode('ethereum/client-go:alltools-v1.8.12', net_number, BOOTNODE_PORT, docker_net.id)
   await myDockerHelper.startContainer(`bootnode_enode_network_${net_number}`)
   const enodeAddress = await myDockerHelper.execShellCommand(`sh ./docker_scripts/getbootnodeurl.sh bootnode_enode_network_${net_number}`)
   myUtils.writeFile(`${NETWORK_DIR}/enode.txt`, enodeAddress)
@@ -69,7 +75,7 @@ async function doit(network) {
     return delay(3000).then(()=>myDockerHelper.startContainer(`node_${node_initial}_network_${net_number}`),log("una fiesta? "))  
   })
   .then(async () => {
-    return delay(4000).then(()=>myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, jambo , enodeAddress, node_initial),log("con muchas cervezas!!!"))
+    return delay(4000).then(()=>myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, jambo , enodeAddress, node_initial, docker_net.id),log("con muchas cervezas!!!"))
   })
   .then(async () => {
     return delay(5000).then(()=>myDockerHelper.startContainer(`network_${net_number}_node_${net_number}`),log("TODA LA NOCHE!!!"))
@@ -88,14 +94,14 @@ router.get('/create/:numRed', async (req, res) => {
         const containers = await myDockerHelper.listContainer()
         
         let containerExist = false;
-        let d;
+        let d
         containers.forEach(containerInfo => {
           //log("containerInfo " + JSON.stringify(containerInfo.State))
           if (containerInfo.Names[0] == `/network_${result}_node_${result}`) {
             d = docker.getContainer(`/network_${result}_node_${result}`)
             containerExist = true;
           }
-        });
+        })
 
         if (!containerExist) {
           throw new Error(`something was wrong when creating the network, start container network_${result}_node_${result} manually`)
@@ -131,4 +137,40 @@ router.get('/node/list/:networkid', async (req, res) => {
     res.statusCode = 500
     res.json({ error: error.message || error.toString() });
   }  
+})
+
+router.get("/delete/:networkid", async (req, res) => {
+  try {
+
+    const network = req.params.networkid
+    /*const NETWORK_DIR = `ETH/${NETWORK}`
+    const nodos = fs.readdirSync(NETWORK_DIR, { withFileTypes: true }).filter(i => !i.isFile())
+    const pids = nodos.map(i => {
+        try {
+            return JSON.parse(fs.readFileSync(`${NETWORK_DIR}/${i.name}/paramsNodo.json`)).subproceso.pid
+        } catch (error) {
+            console.log(error)
+            return null
+        }
+
+    }
+    )*/
+
+    const containers = await myDockerHelper.listContainer()
+
+    containers.forEach(container => {
+      //log("containerInfo " + JSON.stringify(containerInfo.State))
+      if (containerInfo.Names[0] == `/network_${result}_node_${result}`) {
+        d = docker.getContainer(`/network_${result}_node_${result}`)
+        containerExist = true;
+      }
+    })
+      
+    fs.rmSync(NETWORK_DIR, {recursive:true})
+    res.status(200).send(":)")
+
+  } catch (error) {
+      res.statusCode = 500
+      res.json({ error: error.message || error.toString() })
+  }
 })

@@ -1,7 +1,7 @@
 const fs = require('fs')
 const myDockerHelper = require("./docker-helpers")
 const {resolve} = require('path')
-const absolutePath = resolve('');
+const absolutePath = resolve('../');
 
 const delay = (duration) =>
   new Promise(resolve => setTimeout(resolve, duration))
@@ -61,12 +61,12 @@ function createAccount(DIR_NODE, password, networkid,node,callback) {
     writeFile(`${DIR_NODE}/pwd.txt`, password)
     .then(async () => {
       console.log("sjsjsjsj")
-      await myDockerHelper.createContainerNode('ethereum/client-go:stable', `node_${node}_account_${networkid}`, DIR_NODE, networkid, node)
+      await myDockerHelper.createContainerNode('ethereum/client-go:stable', `node_${node}_account_network_${networkid}`, DIR_NODE, networkid, node)
       .catch(error => {return error})
     })
     .then(async () => {
       console.log("bababba")
-      await myDockerHelper.startContainer(`node_${node}_account_${networkid}`)
+      await myDockerHelper.startContainer(`node_${node}_account_network_${networkid}`)
     })
     .then(async () => await cuentaPromise())
     .then(result => {
@@ -79,7 +79,7 @@ function createAccount(DIR_NODE, password, networkid,node,callback) {
 
 async function generateGenesis(NETWORK_CHAINID, CUENTA, BALANCE, CUENTAS_ALLOC, NETWORK_DIR) {
   const timestamp = Math.round(((new Date()).getTime() / 1000)).toString(16)
-  let genesis = JSON.parse(fs.readFileSync(`${absolutePath}/genesisbase.json`).toString())
+  let genesis = JSON.parse(fs.readFileSync(`${absolutePath}/src/genesisbase.json`).toString())
 
   //console.log(`myGenesis ${genesis}`)
 
@@ -105,7 +105,7 @@ function generateParameter(network, node) {
     const NUMERO_NETWORK = parseInt(network)
     const NUMERO_NODO = parseInt(node)
     const NODO = `node${NUMERO_NODO}`
-    const NETWORK_DIR = `Ethereum/network${NUMERO_NETWORK}`
+    const NETWORK_DIR = `../Ethereum/network${NUMERO_NETWORK}`
     const NETWORK_CHAINID = 333444 + NUMERO_NETWORK
 
     const HTTP_PORT = 9545 + NUMERO_NODO + NUMERO_NETWORK * 20
