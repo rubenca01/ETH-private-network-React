@@ -19,7 +19,7 @@ export function ListaNodo() {
         return <div>Cargando...</div>
     }
     return <div>
-        <div className="d-flex">
+        <div className="d-flex mt-3">
             <h3 className="align-self-center">{`Nodos de la network ${params.numero}`}</h3>
         </div>
         <table className="table">

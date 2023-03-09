@@ -10,6 +10,9 @@ import { Terminos } from './Components/Terminos'
 import { Welcome } from './Components/Welcome'
 import { RedDetail } from './Components/RedDetail'
 import { NuevaRed } from './Components/NuevaRed'
+import { BlockDetail } from './Components/BlockDetail'
+import { TxDetail } from './Components/TxDetail'
+import { Balance } from './Components/Balance'
 
 const queryClient = new QueryClient()  
 export const Context = createContext(null)
@@ -28,7 +31,9 @@ export function App() {
             <Route path="/Terminos" element ={<Terminos/>}/>
             <Route path="/red/:numero" element={<RedDetail/>}/>
             <Route path="/Nuevared" element={<NuevaRed/>}/>
-
+            <Route path="/Block/:networkid/:block" element={<BlockDetail/>}/>
+            <Route path="/transaction/:networkid/:TxHash" element={<TxDetail/>}/>
+            <Route path="/balance/:networkid/:address" element={<Balance/>}/>
           </Route>
         </Routes>
       </BrowserRouter>
