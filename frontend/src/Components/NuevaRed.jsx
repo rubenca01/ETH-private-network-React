@@ -1,7 +1,6 @@
 //Front: Formulario para crear la red que nos pida: NUMERO DE RED. Creará la red con el nodo1
 
 import React, { useState } from 'react';
-import { useQuery } from 'react-query';
 
 export function NuevaRed() {
     const [numRed, setNumRed] = useState('333444');

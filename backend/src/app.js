@@ -12,7 +12,6 @@ app.listen(PORT, '0.0.0.0', () => {
 
 const networks = require("./router-network")
 
-
 app.use(morgan('combined'))
 app.use(cors())
 
@@ -24,6 +23,6 @@ app.use("/network", networks)
 
 // ruta not found
 app.use("*", (req, res) =>{
-    res.status(404).send("NOT FOUND ")
+    res.status(404).send("NOT FOUND")
 })
 
