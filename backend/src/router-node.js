@@ -17,6 +17,7 @@ const delay = (duration) =>
 async function doit(network,node) {
     await delay(1000)
     console.log("Let's the party start again")
+    const docker_net = await docker.getNetwork(`blockchain_network_${network}`)
     const parameters = await myUtils.generateParameter(network, node)
 
     const { NETWORK_DIR, DIR_NODE, NETWORK_CHAINID, AUTHRPC_PORT, HTTP_PORT, PORT, IPCPATH, BOOTNODE_PORT } = parameters
@@ -44,7 +45,7 @@ async function doit(network,node) {
     ).then(() => {
         const enode =  fs.readFileSync(`${NETWORK_DIR}/enode.txt`, 'utf8')
         log("enode stored " + JSON.stringify(enode))
-        myDockerHelper.launchNode(`network_${network}_node_${node}`, network, _account_after_promise , enode, node)      
+        myDockerHelper.launchNode(`network_${network}_node_${node}`, network, _account_after_promise , enode, node, docker_net.id)      
     })
     .then(async () => {
         return delay(2000).then(()=>myDockerHelper.startContainer(`network_${network}_node_${node}`))

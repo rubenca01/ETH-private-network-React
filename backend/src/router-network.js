@@ -19,7 +19,6 @@ const delay = (duration) =>
   new Promise(resolve => setTimeout(resolve, duration))
 
 async function doit(network) {
-  //await delay(12000)
   console.log("Let's the party start")
   const net_number = parseInt(network)
   const node_initial = 1
@@ -36,20 +35,28 @@ async function doit(network) {
   myUtils.createIfNotExists(NETWORK_DIR)
   myUtils.createIfNotExists(DIR_NODE)
 
-  //const docker_net = await docker.getNetwork(`blockchain_network_${net_number}`)
-  //if(!docker_net)
-  const docker_net = await myDockerHelper.createDockerNETWORK(net_number)
-
-  console.log("docker network " + JSON.stringify(docker_net.id))
-
+  let docker_net
+  const netList = await docker.listNetworks()
+  let netExist = false
+  netList.forEach(net => {
+    if(net.Name == `blockchain_network_${net_number}`)
+      netExist = true
+  })
+  
+  if(!netExist) {
+    docker_net = await myDockerHelper.createDockerNETWORK(net_number)
+  } else{
+    docker_net = await docker.getNetwork(`blockchain_network_${net_number}`)
+  }
+  
   await myDockerHelper.createContainerBootNodeKey('ethereum/client-go:alltools-v1.8.12', net_number)
   await myDockerHelper.startContainer(`bootnode_genkey_network_${net_number}`)
+  
 
   await myDockerHelper.createContainerBootNodeEnode('ethereum/client-go:alltools-v1.8.12', net_number, BOOTNODE_PORT, docker_net.id)
   await myDockerHelper.startContainer(`bootnode_enode_network_${net_number}`)
   const enodeAddress = await myDockerHelper.execShellCommand(`sh ./docker_scripts/getbootnodeurl.sh bootnode_enode_network_${net_number}`)
   myUtils.writeFile(`${NETWORK_DIR}/enode.txt`, enodeAddress)
-  //log(`enode for bootnode_enode_network_${net_number} is ${enodeAddress}`)
   var _account_after_promise
   const account = await myUtils.createAccount(DIR_NODE,"havingFunIsTheKeyofthehaPpineZZ", net_number, node_initial)    
   .then(resultado => {
@@ -61,13 +68,8 @@ async function doit(network) {
     return _account_after_promise
     
   }).then(async result => {
-    //log(result)
     return await myUtils.generateGenesis(NETWORK_CHAINID, result.acc, BALANCE, result.acc_alloc, NETWORK_DIR)
   })
-  /*.then(async () => {
-    const read = await fs.readFileSync(`${NETWORK_DIR}/genesis.json`,'utf-8')
-    log("genesis " + JSON.stringify(read))
-  })*/
   .then(async () => {
     return delay(2000).then(()=>myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_${node_initial}_network_${net_number}`, DIR_NODE, net_number, node_initial),log("que hacemos? ")) 
   })
@@ -81,7 +83,6 @@ async function doit(network) {
     return delay(5000).then(()=>myDockerHelper.startContainer(`network_${net_number}_node_${net_number}`),log("TODA LA NOCHE!!!"))
   })
   
-
   return network
 }
 
@@ -96,7 +97,6 @@ router.get('/create/:numRed', async (req, res) => {
         let containerExist = false;
         let d
         containers.forEach(containerInfo => {
-          //log("containerInfo " + JSON.stringify(containerInfo.State))
           if (containerInfo.Names[0] == `/network_${result}_node_${result}`) {
             d = docker.getContainer(`/network_${result}_node_${result}`)
             containerExist = true;
@@ -109,7 +109,6 @@ router.get('/create/:numRed', async (req, res) => {
           res.json({ network_id: result })
         }               
       })
-      
           
   } catch (error) {
     res.statusCode = 500

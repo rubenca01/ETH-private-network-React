@@ -60,17 +60,14 @@ function createAccount(DIR_NODE, password, networkid,node,callback) {
   return new Promise(async (resolve, reject) => {
     writeFile(`${DIR_NODE}/pwd.txt`, password)
     .then(async () => {
-      console.log("sjsjsjsj")
       await myDockerHelper.createContainerNode('ethereum/client-go:stable', `node_${node}_account_network_${networkid}`, DIR_NODE, networkid, node)
       .catch(error => {return error})
     })
     .then(async () => {
-      console.log("bababba")
       await myDockerHelper.startContainer(`node_${node}_account_network_${networkid}`)
     })
     .then(async () => await cuentaPromise())
     .then(result => {
-      //console.log("Cuenta: ", result)
       resolve(result) 
 
     })
