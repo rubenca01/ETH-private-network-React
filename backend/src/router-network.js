@@ -297,7 +297,7 @@ router.post('/charge', async (req, res) => {
       return await myeth.getChainId(node.puerto)  
       .then(async chainID => myeth.cargar(networkid, node.nodo, node.puerto, chainID, importe, direccion))
     })
-    console.log("réponse", respuesta)
+    //console.log("réponse", respuesta, respuesta.transactionHash.toString())
     res.send(respuesta.transactionHash.toString())
   } catch (error) {
     res.statusCode = 500

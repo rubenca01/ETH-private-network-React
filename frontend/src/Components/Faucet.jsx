@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 export function Faucet() {
     const params = useParams()
     const [account, setAccount] = useState(null)
+    const [Tx, setTx] = useState(null)
     const {register, handleSubmit} = useForm({
         defaultValues:{amount:0}
     })
@@ -33,7 +34,10 @@ export function Faucet() {
             body: JSON.stringify(data)
 
         })
-
+        .then(x => {
+            console.log(x)
+            return setTx(x.statusText)
+        })
     }
 
 
@@ -46,6 +50,7 @@ export function Faucet() {
                 <input {...register('amount')} type="number" className='form-control'></input>
             </div>
             <button className="btn btn-primary mt-3">Mandar importe</button>
+            {Tx!= null && `Transaction ${JSON.stringify(Tx)}`}
         </form>
     </div>
 }
