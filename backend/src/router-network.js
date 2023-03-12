@@ -5,6 +5,7 @@ const router = express.Router()
 const bodyParser = require('body-parser')
 const myDockerHelper = require("./docker-helpers")
 const listar = require('./list')
+const myeth= require('./eth')
 const myUtils = require("./utils")
 const {resolve} = require('path')
 const absolutePath = resolve('');
@@ -162,12 +163,12 @@ router.get('/create/:numRed', (req, res) => {
       }
     ).then(
         async function launchNode() {
-          myDockerHelper.launchNode(`network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`, NUMERO_NETWORK, _account_after_promise , enodeAddress)
+          myDockerHelper.launchNode(`network_${NUMERO_NETWORK}_node_1`, NUMERO_NETWORK, _account_after_promise , enodeAddress)
         }
     ).then(
       async function startNode() {
-        console.log(`starting blockchain network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`)
-        myDockerHelper.startContainer(`network_${NUMERO_NETWORK}_node_${NUMERO_NETWORK}`)
+        console.log(`starting blockchain network_${NUMERO_NETWORK}_node_1`)
+        myDockerHelper.startContainer(`network_${NUMERO_NETWORK}_node_1`)
       }
     )
     
@@ -219,7 +220,7 @@ router.get('/list', async (req, res) => {
 
 router.get('/node/list/:networkid', async (req, res) => {
   try {
-    const result = {nodos: await listar.listNodes(req.params.networkid, "8545")}
+    const result = {nodos: await listar.listNodes(req.params.networkid, "8541")}
 
     res.json(result)
   } catch (error) {
@@ -240,4 +241,110 @@ router.get('/node/delete/:networkid/:nodeid', (req, res) => {
   res.statusCode = 200
   res.json({status: 200, Message: "Ok", Error: null });
   console.log(res.statusCode, res.statusMessage, res.errored);
+})
+
+
+router.get('/node/list/:networkid', async (req, res) => {
+  try {
+    const result = {nodos: await listar.listNodes(req.params.networkid, "8541")}
+    res.json(result)
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  }  
+})
+
+/* router.get('/block', async (req, res) => {
+  try {
+    const block = await myeth.getLastBlock()
+    res.send(block.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  } 
+}) */
+
+router.get('/:networkid/block', async (req, res) => {
+  try {
+    const block = await listar.getPort(req.params.networkid, "8541")
+    .then(puerto => myeth.getLastBlock(puerto))
+    res.send(block.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  } 
+})
+
+router.get('/:networkid/chainID', async (req, res) => {
+  try {
+    const block = await listar.getPort(req.params.networkid, "8541")
+    .then(puerto => myeth.getChainId(puerto))
+    res.send(block.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  } 
+})
+
+router.post('/charge', async (req, res) => {
+  try{
+    console.log(req.body)
+    const importe = req.body.amount
+    const direccion = req.body.address
+    const networkid = req.body.networkid
+    const respuesta = await listar.getPortNodo(networkid, "8541")
+    .then(async node =>{
+      return await myeth.getChainId(node.puerto)  
+      .then(async chainID => myeth.cargar(networkid, node.nodo, node.puerto, chainID, importe, direccion))
+    })
+    console.log("réponse", respuesta)
+    res.send(respuesta.transactionHash.toString())
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  }
+})
+
+router.post('/blockdetail', async (req, res) => {
+  try{
+    const number = req.body.blocknumber
+    const networkid = req.body.networkid
+    const respuesta = await listar.getPort(networkid, "8541")
+    .then(async puerto =>{
+      return await myeth.blockDetail(puerto, number)  
+    })
+    //console.log("réponse", respuesta)
+    res.send(respuesta)
+  } catch (error) {
+    res.statusCode = 500
+    res.json({ error: error.message || error.toString() });
+  }
+})
+
+router.post('/transaction', async (req, res) => {
+  const Tx = req.body.Tx
+  const networkid = req.body.networkid
+  await listar.getPort(networkid, "8541")
+    .then(async puerto =>{
+      return await myeth.getTx(puerto, Tx)  
+    }).then(respuesta => res.send(respuesta))
+    .catch(e => {
+      res.statusCode = 500
+      res.json({ error: error.message || error.toString() })
+    })
+})
+
+router.post('/balance', async (req, res) => {
+  const address = req.body.address
+  const networkid = req.body.networkid
+  await listar.getPort(networkid, "8541")
+    .then(async puerto =>{
+      return await myeth.getBal(puerto, address)  
+    }).then(respuesta => {
+      res.send(respuesta.toString())
+    })
+    .catch(e => {
+      res.statusCode = 500
+      res.json({ error: error.message || error.toString() })
+    })
 })

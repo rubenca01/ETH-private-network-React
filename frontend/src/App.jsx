@@ -12,6 +12,9 @@ import { RedDetail } from './Components/RedDetail'
 import { NuevaRed } from './Components/NuevaRed'
 import { BorrarRed } from './Components/BorrarRed'
 import { BorrarNodo } from './Components/BorrarNodo'
+import { BlockDetail } from './Components/BlockDetail'
+import {TxDetail} from './Components/TxDetail'
+import {Balance} from './Components/Balance'
 
 const queryClient = new QueryClient()  
 export const Context = createContext(null)
@@ -32,6 +35,9 @@ export function App() {
             <Route path="/Nuevared" element={<NuevaRed/>}/>
             <Route path="/BorrarRed" element={<BorrarRed/>}/>
             <Route path="/BorrarNodo" element={<BorrarNodo/>}/>
+            <Route path="/Block/:networkid/:block" element={<BlockDetail/>}/>
+            <Route path="/transaction/:networkid/:TxHash" element={<TxDetail/>}/>
+            <Route path="/balance/:networkid/:address" element={<Balance/>}/>
           </Route>
         </Routes>
       </BrowserRouter>
