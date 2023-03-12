@@ -61,7 +61,7 @@ async function getChainId(puerto) {
 
 async function cargar(networkid, nodo, puerto, chainID, importe, direccion) {
     const web3 = new Web3(`http://localhost:${puerto}`)
-    const directorio =`./Ethereum/network${networkid}/node1` //change the node number when it is merged with a corrected dev + add ../ instead of ./
+    const directorio =`./Ethereum/network${networkid}/node${nodo}` // ../ instead of ./
     const pwd = fs.readFileSync(`${directorio}/pwd.txt`).toString()
     //console.log(pwd)
     return await myUtils.readdirec(`${directorio}/keystore`)

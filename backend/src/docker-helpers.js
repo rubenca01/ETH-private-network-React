@@ -83,8 +83,8 @@ function createNodeNetwork(imageId, accountName, data_dir, networkid){
 
 function launchNode(accountName, networkid, account, enode){
   return new Promise((resolve, reject)=>{
-  var val1 = Math.floor(8710 + Math.random() * 20);
-  var val2 = Math.floor(3001 + Math.random() * 20);
+  var val1 = Math.floor(8710 + Math.random() * 200);
+  var val2 = Math.floor(3001 + Math.random() * 200);
   const imageId = 'ethereum/client-go:stable'
   const cmd = [ "--networkid", networkid.toString() , 
                 "--ipcpath",`\\\\.\\pipe\\geth${networkid}-${networkid}.ipc`, 
