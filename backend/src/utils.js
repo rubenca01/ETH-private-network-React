@@ -104,7 +104,6 @@ function generateParameter(network, node) {
     const NODO = `node${NUMERO_NODO}`
     const NETWORK_DIR = `../Ethereum/network${NUMERO_NETWORK}`
     const NETWORK_CHAINID = 333444 + NUMERO_NETWORK
-
     const HTTP_PORT = 9545 + NUMERO_NODO + NUMERO_NETWORK * 20
     const DIR_NODE = `${NETWORK_DIR}/${NODO}`
     const IPCPATH = `\\\\.\\pipe\\${NETWORK_CHAINID}-${NODO}.ipc`

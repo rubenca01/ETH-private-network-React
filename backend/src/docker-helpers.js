@@ -75,28 +75,34 @@ function createNodeNetwork(imageId, accountName, data_dir, networkid, node){
   })
 }
 
-function launchNode(accountName, networkid, account, enode, node, docker_net){
+function launchNode(accountName, networkid, account, enode, node, docker_net, net_chainid){
   var val1 = Math.floor(8710 + Math.random() * 20);
   var val2 = Math.floor(3001 + Math.random() * 20);
-  const imageId = 'ethereum/client-go:stable'
-  const cmd = [ "--networkid", networkid.toString(), 
-                "--ipcpath",`\\\\.\\pipe\\geth${networkid}-${networkid}.ipc`, 
+  const imageId = 'ethereum/client-go:v1.8.12'
+  const cmd = [ "--networkid", net_chainid.toString(), 
+                //"--ipcpath",`\\\\.\\pipe\\geth${networkid}-${networkid}.ipc`, 
                 "--datadir", `/codecrypto/network${networkid}/node${node}`,
                 "--syncmode","full",
-                "--http",
-                "--dev",
-                "--http.api","clique,admin,eth,miner,net,txpool,personal,web3",
-                "--http.addr","0.0.0.0",
-                "--http.port","8541",
-                "--http.corsdomain",'"'+'*'+'"',
-                "--allow-insecure-unlock",
+                //"--http",
+                //"--dev",
+                "--ipcdisable",
+                //"--http.api","clique,admin,eth,miner,net,txpool,personal,web3",
+                //"--http.addr","0.0.0.0",
+                //"--http.port","8545",
+                //"--http.corsdomain",'"'+'*'+'"',
+                "--rpc",
+                "--rpcaddr","0.0.0.0",
+                "--rpcport","8545",
+                "--rpcapi","clique,admin,eth,miner,net,txpool,personal,web3",
+                "--rpccorsdomain",'"'+'*'+'"',
+                //"--allow-insecure-unlock",
                 "--unlock",`0X${account}`,
                 "--password",`/codecrypto/network${networkid}/node${node}/pwd.txt`,
                 "--mine",
                 "--port","30032",
                 "--bootnodes",enode,
-                "--verbosity","4"
-                //"--miner.etherbase",`0X${account}`,
+                "--verbosity","3"//,
+                //"--miner.etherbase",`0X${account}`
               ]
   return new Promise((resolve, reject)=>{ 
     console.log("launching node cmd into promise: " + cmd + " ")
@@ -110,15 +116,15 @@ function launchNode(accountName, networkid, account, enode, node, docker_net){
       "HostConfig": {
         'Binds': [`${absolutePath}/Ethereum:/codecrypto`],
         'PortBindings' : {
-          "8541/tcp" : [{"HostPort": val1.toString()}],
-          "30032/tcp" : [{"HostPort": val2.toString()}]
-        }, 
+          "8541/tcp" : [{"HostPort": val1.toString()}]//,
+          //"30033/tcp" : [{"HostPort": val2.toString()}]
+        },
         "Links":[`bootnode_enode_network_${networkid}`],
         "NetworkMode" : `${docker_net}`
       },
       "ExposedPorts":{
         "8541/tcp":{},
-        "30032/tcp":{}
+        "30033/tcp":{}
       },
       User:"1000:1000"
     }, (err,stream)=>{
@@ -188,12 +194,13 @@ function createContainerBootNodeEnode(imageId, networkid, enodePort, docker_net)
     docker.createContainer({
       Image: imageId,
       name: 'bootnode_'+'enode'+'_network_'+networkid,
-      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "9", "-addr", ":30303"],
+      //Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":30303"],
+      Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":"+enodePort.toString()],
       'Volumes': {
         '/opt/bootnode': {}
       },
       'HostConfig': {
-        //'PortBindings' : {"8710/tcp" : [{"HostPort": enodePort.toString()}]},
+        'PortBindings' : {"30301/tcp" : [{"HostPort": enodePort.toString()}]},
         /*'PortBindings' : {
           "30303/tcp" : [{"HostPort": '30303'}],
           "30303/udp" : [{"HostPort": '30303'}]
@@ -203,7 +210,9 @@ function createContainerBootNodeEnode(imageId, networkid, enodePort, docker_net)
       },
       ExposedPorts:{
         "30303/tcp":{},
-        "30303/udp":{}
+        "30301/udp":{},
+        "8545/tcp":{},
+        "8546/tcp":{}
       }
     }, (err,stream)=>{
       if(err){

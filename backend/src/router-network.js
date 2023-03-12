@@ -28,7 +28,7 @@ async function doit(network) {
 
   const { NETWORK_DIR, DIR_NODE, NETWORK_CHAINID, AUTHRPC_PORT, HTTP_PORT, PORT, IPCPATH, BOOTNODE_PORT } = parameters
 
-  //console.log("parameters " + JSON.stringify(parameters))
+  console.log("parameters " + JSON.stringify(parameters))
 
   myUtils.createIfNotExists("../Ethereum")
   myUtils.deleteIfExists(NETWORK_DIR)
@@ -77,7 +77,7 @@ async function doit(network) {
     return delay(3000).then(()=>myDockerHelper.startContainer(`node_${node_initial}_network_${net_number}`),log("una fiesta? "))  
   })
   .then(async () => {
-    return delay(4000).then(()=>myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, jambo , enodeAddress, node_initial, docker_net.id),log("con muchas cervezas!!!"))
+    return delay(4000).then(()=>myDockerHelper.launchNode(`network_${net_number}_node_${net_number}`, net_number, jambo , enodeAddress, node_initial, docker_net.id, NETWORK_CHAINID),log("con muchas cervezas!!!"))
   })
   .then(async () => {
     return delay(5000).then(()=>myDockerHelper.startContainer(`network_${net_number}_node_${net_number}`),log("TODA LA NOCHE!!!"))

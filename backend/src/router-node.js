@@ -45,7 +45,7 @@ async function doit(network,node) {
     ).then(() => {
         const enode =  fs.readFileSync(`${NETWORK_DIR}/enode.txt`, 'utf8')
         log("enode stored " + JSON.stringify(enode))
-        myDockerHelper.launchNode(`network_${network}_node_${node}`, network, _account_after_promise , enode, node, docker_net.id)      
+        myDockerHelper.launchNode(`network_${network}_node_${node}`, network, _account_after_promise , enode, node, docker_net.id, NETWORK_CHAINID)      
     })
     .then(async () => {
         return delay(2000).then(()=>myDockerHelper.startContainer(`network_${network}_node_${node}`))
