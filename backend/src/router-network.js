@@ -57,6 +57,7 @@ async function doit(network) {
   await myDockerHelper.startContainer(`bootnode_enode_network_${net_number}`)
   const enodeAddress = await myDockerHelper.execShellCommand(`sh ./docker_scripts/getbootnodeurl.sh bootnode_enode_network_${net_number}`)
   myUtils.writeFile(`${NETWORK_DIR}/enode.txt`, enodeAddress)
+  log("enodeAddress " + enodeAddress)
   var _account_after_promise
   const account = await myUtils.createAccount(DIR_NODE,"havingFunIsTheKeyofthehaPpineZZ", net_number, node_initial)    
   .then(resultado => {
@@ -71,7 +72,7 @@ async function doit(network) {
     return await myUtils.generateGenesis(NETWORK_CHAINID, result.acc, BALANCE, result.acc_alloc, NETWORK_DIR)
   })
   .then(async () => {
-    return delay(2000).then(()=>myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_${node_initial}_network_${net_number}`, DIR_NODE, net_number, node_initial),log("que hacemos? ")) 
+    return delay(2000).then(()=>myDockerHelper.createNodeNetwork('ethereum/client-go:v1.8.12', `node_${node_initial}_network_${net_number}`, DIR_NODE, net_number, node_initial),log("que hacemos? ")) 
   })
   .then(async () => {
     return delay(3000).then(()=>myDockerHelper.startContainer(`node_${node_initial}_network_${net_number}`),log("una fiesta? "))  

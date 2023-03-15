@@ -32,12 +32,11 @@ async function doit(network,node) {
         const CUENTAS_ALLOC = [
             resultado
         ]       
-        myUtils.generateGenesis(NETWORK_CHAINID, resultado, BALANCE, CUENTAS_ALLOC, NETWORK_DIR)
         _account_after_promise = resultado
         return _account_after_promise
         
     }).then(
-        await myDockerHelper.createNodeNetwork('ethereum/client-go:stable', `node_${node}_network_${network}`, DIR_NODE, network, node)
+        await myDockerHelper.createNodeNetwork('ethereum/client-go:v1.8.12', `node_${node}_network_${network}`, DIR_NODE, network, node)
     ).then(
         async => {
             myDockerHelper.startContainer(`node_${node}_network_${network}`)

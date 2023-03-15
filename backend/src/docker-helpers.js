@@ -80,29 +80,18 @@ function launchNode(accountName, networkid, account, enode, node, docker_net, ne
   var val2 = Math.floor(3001 + Math.random() * 20);
   const imageId = 'ethereum/client-go:v1.8.12'
   const cmd = [ "--networkid", net_chainid.toString(), 
-                //"--ipcpath",`\\\\.\\pipe\\geth${networkid}-${networkid}.ipc`, 
+                "--ipcpath",`\\\\.\\pipe\\geth${net_chainid}-${node}.ipc`, 
                 "--datadir", `/codecrypto/network${networkid}/node${node}`,
                 "--syncmode","full",
-                //"--http",
-                //"--dev",
-                "--ipcdisable",
-                //"--http.api","clique,admin,eth,miner,net,txpool,personal,web3",
-                //"--http.addr","0.0.0.0",
-                //"--http.port","8545",
-                //"--http.corsdomain",'"'+'*'+'"',
                 "--rpc",
                 "--rpcaddr","0.0.0.0",
                 "--rpcport","8545",
                 "--rpcapi","clique,admin,eth,miner,net,txpool,personal,web3",
-                "--rpccorsdomain",'"'+'*'+'"',
-                //"--allow-insecure-unlock",
+                "--rpccorsdomain","*",
                 "--unlock",`0X${account}`,
                 "--password",`/codecrypto/network${networkid}/node${node}/pwd.txt`,
-                "--mine",
-                "--port","30032",
-                "--bootnodes",enode,
-                "--verbosity","3"//,
-                //"--miner.etherbase",`0X${account}`
+                "--bootnodes",enode.toString().replace('\n',''),
+                "--verbosity","3",
               ]
   return new Promise((resolve, reject)=>{ 
     console.log("launching node cmd into promise: " + cmd + " ")
@@ -116,16 +105,18 @@ function launchNode(accountName, networkid, account, enode, node, docker_net, ne
       "HostConfig": {
         'Binds': [`${absolutePath}/Ethereum:/codecrypto`],
         'PortBindings' : {
-          "8541/tcp" : [{"HostPort": val1.toString()}]//,
-          //"30033/tcp" : [{"HostPort": val2.toString()}]
+          "8545/tcp" : [{"HostPort": val1.toString()}],
+          "30303/udp" : [{"HostPort": val2.toString()}]
         },
         "Links":[`bootnode_enode_network_${networkid}`],
         "NetworkMode" : `${docker_net}`
       },
-      "ExposedPorts":{
-        "8541/tcp":{},
-        "30033/tcp":{}
-      },
+      "ExposedPorts": {
+        "30303/tcp": {},
+        "30303/udp": {},
+        "8545/tcp": {},
+        "8546/tcp": {}
+    },
       User:"1000:1000"
     }, (err,stream)=>{
       if(err){
@@ -194,25 +185,20 @@ function createContainerBootNodeEnode(imageId, networkid, enodePort, docker_net)
     docker.createContainer({
       Image: imageId,
       name: 'bootnode_'+'enode'+'_network_'+networkid,
-      //Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":30303"],
       Cmd: ["bootnode", "--nodekey", "/opt/bootnode/boot.key", "--verbosity", "3", "-addr", ":"+enodePort.toString()],
       'Volumes': {
         '/opt/bootnode': {}
       },
       'HostConfig': {
-        'PortBindings' : {"30301/tcp" : [{"HostPort": enodePort.toString()}]},
-        /*'PortBindings' : {
-          "30303/tcp" : [{"HostPort": '30303'}],
-          "30303/udp" : [{"HostPort": '30303'}]
-        },*/
+        'PortBindings' : {"30303/udp" : [{"HostPort": enodePort.toString()}]},
         'Binds': [`${absolutePath}/Ethereum/network${networkid}/:/opt/bootnode`],
         "NetworkMode" : `${docker_net}`
       },
-      ExposedPorts:{
-        "30303/tcp":{},
-        "30301/udp":{},
-        "8545/tcp":{},
-        "8546/tcp":{}
+      "ExposedPorts": {
+        "30303/tcp": {},
+        "30303/udp": {},
+        "8545/tcp": {},
+        "8546/tcp": {}
       }
     }, (err,stream)=>{
       if(err){
